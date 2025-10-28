@@ -3,32 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNW Computers Job Tracker</title>
+    <title>PNW Computers Job Tracker - Login</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3ff6; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .cursor-pointer { cursor: pointer; }
+        /* New class to hide elements until logged in */
+        .app-content-hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="app" class="min-h-screen p-4 sm:p-8">
-    <header class="text-center mb-8">
+<div id="app" class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+    <header class="text-center mb-8 w-full">
         <h1 class="text-4xl font-extrabold text-blue-900 mb-2">Pacific NW Computers Job Tracker</h1>
         <p class="text-gray-600">Daily Dashboard & Job Check-In System</p>
     </header>
 
-    <nav class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200">
+    <div id="login-view" class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mt-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Staff Login</h2>
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
+            </div>
+            <p id="login-message" class="text-sm text-red-600 text-center hidden"></p>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
+                Log In
+            </button>
+        </form>
+    </div>
+    <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200 app-content-hidden">
         <button id="dashboard-tab" onclick="showTab('dashboard')" class="py-2 px-4 text-sm sm:text-lg font-medium text-blue-700 border-b-4 border-blue-700">Dashboard</button>
         <button id="checkin-tab" onclick="showTab('checkin')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">New Job Check-In</button>
         <button id="joblog-tab" onclick="showTab('joblog')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Job Log</button>
     </nav>
 
-    <div class="max-w-6xl mx-auto">
+    <div id="main-app-content" class="max-w-6xl mx-auto w-full app-content-hidden">
         <div id="dashboard-view" class="tab-content space-y-8">
             <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">Today's Focus & Job Status</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -138,7 +153,6 @@
     </div>
 </div>
 
-<!-- Job Details Modal -->
 <div id="job-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
@@ -157,6 +171,100 @@
 <script>
 // ⭐ IMPORTANT FIX: The URL MUST be in quotes. Replace this with your actual deployed URL.
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxfUuDQaJD8ows6OV9mOo7HRtctbtugSUcGpcM4C6d7V94YlTs41uhzmLhtcvyq8aQyFQ/exec';
+const MASTER_PASSWORD = 'Numbers11!'; // ⚠️ CHANGE THIS TO YOUR DESIRED PASSWORD!
+
+/**
+ * Login Functionality
+ */
+function attemptLogin(e) {
+    e.preventDefault();
+    const passwordInput = document.getElementById('password');
+    const loginMessage = document.getElementById('login-message');
+    const enteredPassword = passwordInput.value;
+
+    loginMessage.classList.add('hidden');
+
+    if (enteredPassword === MASTER_PASSWORD) {
+        showApp();
+    } else {
+        loginMessage.textContent = 'Incorrect password. Please try again.';
+        loginMessage.classList.remove('hidden');
+        passwordInput.value = ''; // Clear password on failure
+        passwordInput.focus();
+    }
+}
+
+function showApp() {
+    // Hide the login view
+    document.getElementById('login-view').classList.add('hidden');
+    // Show the navigation and main content
+    document.getElementById('app-nav').classList.remove('app-content-hidden');
+    document.getElementById('main-app-content').classList.remove('app-content-hidden');
+    // Initialize the dashboard view as before
+    showTab('dashboard');
+}
+
+/**
+ * Initialization and Event Listeners
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Add login form submission handler
+    document.getElementById('login-form').addEventListener('submit', attemptLogin);
+
+    // 2. Add job check-in form submission handler (rest of your original code)
+    document.getElementById('job-checkin-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const jobData = {
+            jobId: document.getElementById('jobId').value,
+            clientName: document.getElementById('clientName').value,
+            clientEmail: document.getElementById('clientEmail').value,
+            clientPhone: document.getElementById('clientPhone').value,
+            serviceType: document.getElementById('serviceType').value,
+            dueDate: document.getElementById('dueDate').value,
+            currentStatus: document.getElementById('currentStatus').value,
+            systemMake: document.getElementById('systemMake').value,
+            initialRequest: document.getElementById('initialRequest').value
+        };
+        
+        const messageBox = document.getElementById('message-box');
+        messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+        messageBox.textContent = 'Submitting...';
+        messageBox.classList.add('bg-blue-100', 'text-blue-700');
+        messageBox.classList.remove('hidden');
+        
+        try {
+            // Use FormData or send as URL parameters to avoid preflight
+            const params = new URLSearchParams();
+            params.append('data', JSON.stringify(jobData));
+            
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: params  // Send as form data instead of JSON
+            });
+            
+            const result = await response.json();
+            
+            if (result.result === 'success') {
+                messageBox.textContent = result.message || 'Job checked in successfully!';
+                messageBox.classList.remove('bg-blue-100', 'text-blue-700');
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+                document.getElementById('job-checkin-form').reset();
+            } else {
+                throw new Error(result.message || 'Unknown error');
+            }
+        } catch (error) {
+            messageBox.textContent = 'Error: ' + error.message;
+            messageBox.classList.remove('bg-blue-100', 'text-blue-700');
+            messageBox.classList.add('bg-red-100', 'text-red-700');
+        }
+    }); 
+    
+    // The initial view is now the login screen, so we don't call showTab('dashboard'); here.
+    // It's called inside showApp() upon successful login.
+});
+
+// --- Your Existing Functions (No significant changes needed, but included for completeness) ---
 
 function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -178,58 +286,6 @@ function showTab(tabName) {
         fetchJobLog();
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('job-checkin-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const jobData = {
-        jobId: document.getElementById('jobId').value,
-        clientName: document.getElementById('clientName').value,
-        clientEmail: document.getElementById('clientEmail').value,
-        clientPhone: document.getElementById('clientPhone').value,
-        serviceType: document.getElementById('serviceType').value,
-        dueDate: document.getElementById('dueDate').value,
-        currentStatus: document.getElementById('currentStatus').value,
-        systemMake: document.getElementById('systemMake').value,
-        initialRequest: document.getElementById('initialRequest').value
-    };
-    
-    const messageBox = document.getElementById('message-box');
-    messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
-    messageBox.textContent = 'Submitting...';
-    messageBox.classList.add('bg-blue-100', 'text-blue-700');
-    messageBox.classList.remove('hidden');
-    
-    try {
-        // Use FormData or send as URL parameters to avoid preflight
-        const params = new URLSearchParams();
-        params.append('data', JSON.stringify(jobData));
-        
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: params  // Send as form data instead of JSON
-        });
-        
-        const result = await response.json();
-        
-        if (result.result === 'success') {
-            messageBox.textContent = result.message || 'Job checked in successfully!';
-            messageBox.classList.remove('bg-blue-100', 'text-blue-700');
-            messageBox.classList.add('bg-green-100', 'text-green-700');
-            document.getElementById('job-checkin-form').reset();
-        } else {
-            throw new Error(result.message || 'Unknown error');
-        }
-    } catch (error) {
-        messageBox.textContent = 'Error: ' + error.message;
-        messageBox.classList.remove('bg-blue-100', 'text-blue-700');
-        messageBox.classList.add('bg-red-100', 'text-red-700');
-    }
-}); 
-    
-    showTab('dashboard');  // ← Initialize the dashboard view
-});
 
 async function fetchJobStatusCounts() {
     const container = document.getElementById('status-counts');
@@ -299,12 +355,12 @@ async function fetchScheduleData() {
         // Filter events for today and future. Use a more robust date string for parsing.
         const events = data.filter(item => {
             // item.Event_Date comes from GAS, which should be a valid date string
-            const eventDate = new Date(item.Event_Date); 
+            const eventDate = new Date(item.Event_Date);  
             
             // Check if the date object is valid
             if (isNaN(eventDate.getTime())) {
                 console.error("Invalid date received for schedule item:", item.Event_Date);
-                return false; 
+                return false;  
             }
 
             // Strip time for comparison
