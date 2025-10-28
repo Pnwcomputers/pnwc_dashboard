@@ -121,6 +121,7 @@
 </div>
 
 <script>
+// ⭐ IMPORTANT FIX: The URL MUST be in quotes. Replace this with your actual deployed URL.
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyk9QHq8qAl6wcRZv9MHp_poAgrxSi5gcbJVYkMnbGwu_Wo0ZsASUx-vztGLmwke_Xpvw/exec';
 
 function showTab(tabName) {
@@ -161,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'cors',
+                // Removed 'mode: cors' as it is often redundant for GAS Web Apps unless specific setup requires it
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData)
             });
@@ -171,6 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageBox.classList.remove('bg-blue-100', 'text-blue-800');
                 messageBox.classList.add('bg-green-100', 'text-green-800');
                 document.getElementById('job-checkin-form').reset();
+                // Refresh dashboard data after a successful check-in
+                if (document.getElementById('dashboard-view').classList.contains('hidden') === false) {
+                    fetchJobStatusCounts();
+                }
             } else {
                 throw new Error(result.message);
             }
@@ -213,68 +218,112 @@ async function fetchScheduleData() {
     const list = document.getElementById('schedule-list');
     const loading = document.getElementById('schedule-loading');
     const errorMsg = document.getElementById('schedule-error');
+    
     list.innerHTML = '';
     loading.classList.remove('hidden');
     errorMsg.classList.add('hidden');
+
     try {
         const response = await fetch(WEB_APP_URL);
         if (!response.ok) throw new Error('HTTP error');
         const data = await response.json();
+        
         loading.classList.add('hidden');
+
         if (!data || data.length === 0) {
             list.innerHTML = '<p class="text-gray-500 italic">No appointments scheduled.</p>';
             return;
         }
+
         const now = new Date();
         now.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        
+        // Filter events for today and future. Use a more robust date string for parsing.
         const events = data.filter(item => {
-            const eventDate = new Date(item.Event_Date);
-            eventDate.setHours(0, 0, 0, 0);
-            return eventDate >= now;
+            // item.Event_Date comes from GAS, which should be a valid date string
+            const eventDate = new Date(item.Event_Date); 
+            
+            // Check if the date object is valid
+            if (isNaN(eventDate.getTime())) {
+                console.error("Invalid date received for schedule item:", item.Event_Date);
+                return false; 
+            }
+
+            // Strip time for comparison
+            const eventDay = new Date(eventDate);
+            eventDay.setHours(0, 0, 0, 0);
+
+            return eventDay.getTime() >= now.getTime();
         });
+
         if (events.length === 0) {
             list.innerHTML = '<p class="text-gray-500 italic">No upcoming appointments.</p>';
             return;
         }
-        const todayEvents = events.filter(item => {
-            const eventDate = new Date(item.Event_Date);
-            eventDate.setHours(0, 0, 0, 0);
-            return eventDate.getTime() === today.getTime();
+
+        // --- Separate Today's Events from Upcoming Events ---
+        
+        const todayEvents = [];
+        const upcomingEvents = [];
+        const todayDateString = now.toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'});
+
+        events.forEach(item => {
+            const itemDate = new Date(item.Event_Date);
+            const itemDay = new Date(itemDate);
+            itemDay.setHours(0, 0, 0, 0);
+
+            if (itemDay.getTime() === now.getTime()) {
+                todayEvents.push(item);
+            } else {
+                upcomingEvents.push(item);
+            }
         });
-        const upcomingEvents = events.filter(item => {
-            const eventDate = new Date(item.Event_Date);
-            eventDate.setHours(0, 0, 0, 0);
-            return eventDate.getTime() > today.getTime();
-        });
-        const todayDateString = today.toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'});
+        
+        // --- Render Today's Events ---
         if (todayEvents.length > 0) {
+             // Sort by time (Event_Date is a full Date object)
+            todayEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
             list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4>`;
             todayEvents.forEach(item => list.innerHTML += createScheduleItem(item, 'bg-blue-50'));
         } else {
             list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4><p class="text-gray-500 italic ml-2">No appointments today.</p>`;
         }
+        
+        // --- Render Upcoming Events ---
         if (upcomingEvents.length > 0) {
             list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 border-t pt-3 mt-4">Upcoming Schedule</h4>';
+            // Sort by date/time
             upcomingEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
             upcomingEvents.forEach(item => list.innerHTML += createScheduleItem(item, 'bg-gray-50'));
         }
+
     } catch (error) {
+        console.error("Schedule Fetch Error:", error);
         loading.classList.add('hidden');
+        errorMsg.textContent = `Error loading schedule: ${error.message}`;
         errorMsg.classList.remove('hidden');
     }
 }
 
 function createScheduleItem(item, bgColor) {
+    // Note: Event_Date is a JavaScript Date object string from the spreadsheet,
+    // which should include a full timestamp for correct sorting and display.
     const eventDate = new Date(item.Event_Date);
+    
+    // Display only the date part for the header (e.g., Mon, Oct 27)
     const displayDate = eventDate.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
+    
+    // Time_Start/End is the formatted time string from the sheet (e.g., 09:30 AM - 10:00 AM)
     const timeText = item['Time_Start/End'] || 'Time N/A';
+    
+    // Cleaned header names from getSheetDataAsJson
     const clientName = item['Client_Name'] || 'Client N/A';
     const jobId = item['Job_ID'] || 'No Job ID';
     const location = item['Location/Address'] || 'N/A';
     const notes = item['Event_Notes'] || '';
-    const notesHtml = notes ? `<span class="text-xs text-gray-500 mt-1 block">${notes}</span>` : '';
+
+    const notesHtml = notes ? `<span class="text-xs text-gray-500 mt-1 block">Notes: ${notes}</span>` : '';
+    
     return `
         <div class="p-4 ${bgColor} rounded-lg shadow-sm border-l-4 border-blue-500">
             <div class="flex justify-between items-start mb-2">
