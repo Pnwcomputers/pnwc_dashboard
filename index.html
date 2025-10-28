@@ -306,17 +306,12 @@ async function fetchScheduleData() {
 }
 
 function createScheduleItem(item, bgColor) {
-    // Note: Event_Date is a JavaScript Date object string from the spreadsheet,
-    // which should include a full timestamp for correct sorting and display.
     const eventDate = new Date(item.Event_Date);
-    
-    // Display only the date part for the header (e.g., Mon, Oct 27)
     const displayDate = eventDate.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
     
-    // Time_Start/End is the formatted time string from the sheet (e.g., 09:30 AM - 10:00 AM)
-    const timeText = item['Time_Start/End'] || 'Time N/A';
+    // ⭐ THE FIX IS HERE: Use 'Time_Start_End' which is the cleaned header.
+    const timeText = item['Time_Start_End'] || 'Time N/A';
     
-    // Cleaned header names from getSheetDataAsJson
     const clientName = item['Client_Name'] || 'Client N/A';
     const jobId = item['Job_ID'] || 'No Job ID';
     const location = item['Location/Address'] || 'N/A';
