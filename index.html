@@ -205,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBox.classList.remove('bg-blue-100', 'text-blue-700');
         messageBox.classList.add('bg-red-100', 'text-red-700');
     }
+}); 
+    
+    showTab('dashboard');  // ← Initialize the dashboard view
 });
 
 async function fetchJobStatusCounts() {
