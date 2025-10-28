@@ -169,7 +169,6 @@
 </div>
 
 <script>
-// ⭐ IMPORTANT FIX: The URL MUST be in quotes. Replace this with your actual deployed URL.
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxfUuDQaJD8ows6OV9mOo7HRtctbtugSUcGpcM4C6d7V94YlTs41uhzmLhtcvyq8aQyFQ/exec';
 const MASTER_PASSWORD = 'Numbers11!';
 
@@ -263,8 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // The initial view is now the login screen, so we don't call showTab('dashboard'); here.
     // It's called inside showApp() upon successful login.
 });
-
-// --- Your Existing Functions (No significant changes needed, but included for completeness) ---
 
 function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -423,7 +420,6 @@ function createScheduleItem(item, bgColor) {
     const eventDate = new Date(item.Event_Date);
     const displayDate = eventDate.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
     
-    // ⭐ THE FIX IS HERE: Use 'Time_Start_End' which is the cleaned header.
     const timeText = item['Time_Start_End'] || 'Time N/A';
     
     const clientName = item['Client_Name'] || 'Client N/A';
