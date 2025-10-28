@@ -10,6 +10,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .cursor-pointer { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -90,11 +91,11 @@
                         <div>
                             <label for="currentStatus" class="block text-sm font-medium text-gray-700">Initial Status</label>
                             <select id="currentStatus" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
-                                <option value="1. Checked In:">1. Checked In:</option>
-                                <option value="2. Awaiting Customer Response">2. Awaiting Customer Response</option>
-                                <option value="3. Awaiting Parts">3. Awaiting Parts</option>
+                                <option value="1. Checked In: Diagnostics">1. Checked In: Diagnostics</option>
+                                <option value="2. Awaiting Customer Approval">2. Awaiting Customer Approval</option>
+                                <option value="3. Awaiting Parts (Vendor Side)">3. Awaiting Parts (Vendor Side)</option>
                                 <option value="4. In Progress: Repair/Install">4. In Progress: Repair/Install</option>
-                                <option value="5. Ready for Pickup">5. Ready for Pickup</option>
+                                <option value="5. Ready for Pickup/Delivery">5. Ready for Pickup/Delivery</option>
                             </select>
                         </div>
                     </div>
@@ -116,6 +117,22 @@
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Submit Job Check-In</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div id="job-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
+            <h2 id="modal-title" class="text-2xl font-bold">Job Details</h2>
+            <button onclick="closeJobDetails()" class="text-white hover:text-gray-200 text-3xl font-bold">&times;</button>
+        </div>
+        <div id="modal-content" class="p-6 overflow-y-auto flex-1">
+            <div class="flex items-center justify-center py-12">
+                <span class="spinner mr-2"></span>
+                <span class="text-gray-500">Loading jobs...</span>
+            </div>
         </div>
     </div>
 </div>
@@ -200,27 +217,27 @@ async function fetchJobStatusCounts() {
         const totalJobs = Object.values(counts).reduce((sum, count) => sum + count, 0);
         
         container.innerHTML = `
-            <div class="flex justify-between p-4 bg-indigo-100 rounded-lg border-2 border-indigo-500 mb-4">
+            <div onclick="showJobDetails('all')" class="flex justify-between p-4 bg-indigo-100 rounded-lg border-2 border-indigo-500 mb-4 cursor-pointer hover:bg-indigo-200 transition-colors">
                 <span class="font-bold text-gray-800 text-lg">Current Jobs:</span>
                 <span class="text-indigo-700 font-extrabold text-2xl">${totalJobs}</span>
             </div>
-            <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-blue-600">
-                <span class="font-medium text-gray-700">Checked In:</span>
+            <div onclick="showJobDetails('1. Checked In: Diagnostics')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition-colors">
+                <span class="font-medium text-gray-700">Checked In: Diagnostics:</span>
                 <span class="text-blue-600 font-bold text-xl">${counts['1. Checked In: Diagnostics'] || 0}</span>
             </div>
-            <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500">
+            <div onclick="showJobDetails('2. Awaiting Customer Approval')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500 cursor-pointer hover:bg-orange-50 transition-colors">
                 <span class="font-medium text-gray-700">Awaiting Customer Approval:</span>
                 <span class="text-orange-500 font-bold text-xl">${counts['2. Awaiting Customer Approval'] || 0}</span>
             </div>
-            <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-600">
+            <div onclick="showJobDetails('3. Awaiting Parts (Vendor Side)')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-600 cursor-pointer hover:bg-yellow-50 transition-colors">
                 <span class="font-medium text-gray-700">Awaiting Parts:</span>
                 <span class="text-yellow-600 font-bold text-xl">${counts['3. Awaiting Parts (Vendor Side)'] || 0}</span>
             </div>
-            <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-purple-600">
+            <div onclick="showJobDetails('4. In Progress: Repair/Install')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-purple-600 cursor-pointer hover:bg-purple-50 transition-colors">
                 <span class="font-medium text-gray-700">In Progress:</span>
                 <span class="text-purple-600 font-bold text-xl">${counts['4. In Progress: Repair/Install'] || 0}</span>
             </div>
-            <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-600">
+            <div onclick="showJobDetails('5. Ready for Pickup/Delivery')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-600 cursor-pointer hover:bg-green-50 transition-colors">
                 <span class="font-medium text-gray-700">Ready for Pickup/Delivery:</span>
                 <span class="text-green-600 font-bold text-xl">${counts['5. Ready for Pickup/Delivery'] || 0}</span>
             </div>
@@ -354,6 +371,108 @@ function createScheduleItem(item, bgColor) {
         </div>
     `;
 }
+
+// Job Details Modal Functions
+async function showJobDetails(status) {
+    const modal = document.getElementById('job-details-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    
+    // Show modal with loading state
+    modal.classList.remove('hidden');
+    modalContent.innerHTML = `
+        <div class="flex items-center justify-center py-12">
+            <span class="spinner mr-2"></span>
+            <span class="text-gray-500">Loading jobs...</span>
+        </div>
+    `;
+    
+    // Set title based on status
+    if (status === 'all') {
+        modalTitle.textContent = 'All Current Jobs';
+    } else {
+        modalTitle.textContent = status;
+    }
+    
+    try {
+        // Fetch job details from backend
+        const response = await fetch(`${WEB_APP_URL}?action=getJobsByStatus&status=${encodeURIComponent(status)}`);
+        if (!response.ok) throw new Error('HTTP error');
+        const jobs = await response.json();
+        
+        if (!jobs || jobs.length === 0) {
+            modalContent.innerHTML = '<p class="text-gray-500 text-center py-12">No jobs found for this status.</p>';
+            return;
+        }
+        
+        // Display jobs
+        let html = '<div class="space-y-4">';
+        jobs.forEach(job => {
+            html += createJobCard(job);
+        });
+        html += '</div>';
+        
+        modalContent.innerHTML = html;
+    } catch (error) {
+        console.error('Error fetching job details:', error);
+        modalContent.innerHTML = '<p class="text-red-500 text-center py-12">Error loading job details. Please try again.</p>';
+    }
+}
+
+function closeJobDetails() {
+    document.getElementById('job-details-modal').classList.add('hidden');
+}
+
+function createJobCard(job) {
+    const statusColors = {
+        '1. Checked In: Diagnostics': 'border-blue-600 bg-blue-50',
+        '2. Awaiting Customer Approval': 'border-orange-500 bg-orange-50',
+        '3. Awaiting Parts (Vendor Side)': 'border-yellow-600 bg-yellow-50',
+        '4. In Progress: Repair/Install': 'border-purple-600 bg-purple-50',
+        '5. Ready for Pickup/Delivery': 'border-green-600 bg-green-50'
+    };
+    
+    const colorClass = statusColors[job.Status] || 'border-gray-400 bg-gray-50';
+    
+    return `
+        <div class="border-l-4 ${colorClass} p-4 rounded-lg shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="font-bold text-lg text-gray-800 mb-2">
+                        Job ID: <span class="text-blue-600">${job.Job_ID || 'N/A'}</span>
+                    </div>
+                    <div class="text-sm space-y-1">
+                        <p><span class="font-semibold">Client:</span> ${job.Client_Name || 'N/A'}</p>
+                        <p><span class="font-semibold">Email:</span> ${job.Client_Email || 'N/A'}</p>
+                        <p><span class="font-semibold">Phone:</span> ${job.Client_Phone || 'N/A'}</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm space-y-1">
+                        <p><span class="font-semibold">Service Type:</span> ${job.Service_Type || 'N/A'}</p>
+                        <p><span class="font-semibold">Due Date:</span> ${job.Due_Date || 'N/A'}</p>
+                        <p><span class="font-semibold">System:</span> ${job.System_Make_Model || 'N/A'}</p>
+                        <p><span class="font-semibold">Status:</span> <span class="font-medium">${job.Status || 'N/A'}</span></p>
+                    </div>
+                </div>
+            </div>
+            ${job.Initial_Request ? `
+                <div class="mt-3 pt-3 border-t border-gray-300">
+                    <p class="font-semibold text-sm text-gray-700 mb-1">Initial Request:</p>
+                    <p class="text-sm text-gray-600">${job.Initial_Request}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('job-details-modal');
+    if (e.target === modal) {
+        closeJobDetails();
+    }
+});
 </script>
 </body>
 </html>
