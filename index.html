@@ -280,15 +280,15 @@
 
             container.innerHTML = `
                 <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500">
-                    <span class="font-medium text-gray-700">Awaiting Customer Approval (2):</span>
+                    <span class="font-medium text-gray-700">Awaiting Customer Approval:</span>
                     <span class="text-orange-500 font-bold text-xl">${counts['2. Awaiting Customer Approval'] || 0} Jobs</span>
                 </div>
                 <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-600">
-                    <span class="font-medium text-gray-700">Awaiting Parts (3):</span>
+                    <span class="font-medium text-gray-700">Awaiting Parts:</span>
                     <span class="text-yellow-600 font-bold text-xl">${counts['3. Awaiting Parts (Vendor Side)'] || 0} Jobs</span>
                 </div>
                 <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-600">
-                    <span class="font-medium text-gray-700">Ready for Pickup/Delivery (5):</span>
+                    <span class="font-medium text-gray-700">Ready for Pickup/Delivery:</span>
                     <span class="text-green-600 font-bold text-xl">${counts['5. Ready for Pickup/Delivery'] || 0} Jobs</span>
                 </div>
             `;
