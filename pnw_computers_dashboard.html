@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNW Computers Job Tracking Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fc; }
+        .tab-content { display: none; }
+        .active-tab { background-color: #3b82f6; color: white !important; font-weight: 600; }
+        .card { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800">PNW Computers Service Hub</h1>
+            <p class="text-gray-500 mt-1">Onsite & In-Shop Job Tracking Dashboard</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tab-dashboard-btn" onclick="openTab('dashboard')" class="tab-btn active-tab px-4 py-2 text-gray-600 rounded-t-lg transition-colors duration-150">
+                Dashboard
+            </button>
+            <button id="tab-new-job-btn" onclick="openTab('new-job')" class="tab-btn px-4 py-2 text-gray-600 rounded-t-lg transition-colors duration-150">
+                New Job Check-In
+            </button>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="tab-content block">
+            <div class="grid md:grid-cols-2 gap-6">
+                
+                <!-- Today's ToDo List (In-Shop & Onsite) -->
+                <div class="card bg-white p-5 rounded-xl border border-gray-200">
+                    <h2 class="text-xl font-semibold text-blue-700 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M16 14h.01"></path><path d="M12 18h.01"></path></svg>
+                        Today's Focus <span id="today-date" class="ml-2 text-sm text-gray-500"></span>
+                    </h2>
+                    <ul id="today-list" class="space-y-3">
+                        <!-- Mock data inserted here -->
+                    </ul>
+                </div>
+
+                <!-- Upcoming Jobs & Follow-ups -->
+                <div class="card bg-white p-5 rounded-xl border border-gray-200">
+                    <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26a1 1 0 00-.78.36l-3.08 4.11a1 1 0 01-.78.36h-2.24a1 1 0 01-.78-.36l-3.08-4.11a1 1 0 00-.78-.36H6a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2v-6a2 2 0 00-2-2z"></path><path d="M12 4v4"></path><path d="M8 4v4"></path><path d="M16 4v4"></path></svg>
+                        Upcoming & Awaiting <span class="ml-2 text-sm text-gray-500">(Due in > 2 days or Awaiting)</span>
+                    </h2>
+                    <ul id="upcoming-list" class="space-y-3">
+                        <!-- Mock data inserted here -->
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Dashboard Notes -->
+            <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                <p class="text-sm font-medium text-yellow-800">
+                    **Google Calendar Integration Note:** For actual onsite scheduling, please use your Google Calendar and manually add **Onsite** jobs to the sheet. This list is a simulated display of entries from your **Master Job Log**.
+                </p>
+            </div>
+        </div>
+
+        <!-- New Job Form Content -->
+        <div id="new-job" class="tab-content">
+            <form id="job-checkin-form" class="bg-white p-8 rounded-xl card border border-gray-200">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">Job Check-In / Data Input</h2>
+
+                <!-- Client Information -->
+                <fieldset class="mb-6 p-4 border rounded-lg border-gray-300">
+                    <legend class="text-lg font-semibold text-gray-700 px-2">Client Information</legend>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="clientName" class="block text-sm font-medium text-gray-700">Client Name</label>
+                            <input type="text" id="clientName" name="clientName" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                        </div>
+                        <div>
+                            <label for="clientEmail" class="block text-sm font-medium text-gray-700">Client Email (For IFTTT Follow-up)</label>
+                            <input type="email" id="clientEmail" name="clientEmail" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                        </div>
+                        <div>
+                            <label for="clientPhone" class="block text-sm font-medium text-gray-700">Client Phone</label>
+                            <input type="tel" id="clientPhone" name="clientPhone" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="dueDate" class="block text-sm font-medium text-gray-700">Estimated Due Date</label>
+                            <input type="date" id="dueDate" name="dueDate" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Job Information -->
+                <fieldset class="mb-6 p-4 border rounded-lg border-gray-300">
+                    <legend class="text-lg font-semibold text-gray-700 px-2">Job Details</legend>
+                    <div class="grid sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="jobId" class="block text-sm font-medium text-gray-700">Job ID (e.g., WO-1523)</label>
+                            <input type="text" id="jobId" name="jobId" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                        </div>
+                        <div>
+                            <label for="serviceType" class="block text-sm font-medium text-gray-700">Service Location/Type</label>
+                            <select id="serviceType" name="serviceType" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                                <option value="">-- Select --</option>
+                                <option value="In-Shop">In-Shop (Drop Off)</option>
+                                <option value="Onsite">Onsite Appointment</option>
+                                <option value="Remote">Remote Support</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="initialRequest" class="block text-sm font-medium text-gray-700">Initial Service Request / Issue</label>
+                        <textarea id="initialRequest" name="initialRequest" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="e.g., 'System freezing during transfers' (Mac Book, Source 7)" required></textarea>
+                    </div>
+
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <div>
+                            <label for="systemMake" class="block text-sm font-medium text-gray-700">System Make</label>
+                            <input type="text" id="systemMake" name="systemMake" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="Dell, Apple, Custom">
+                        </div>
+                        <div>
+                            <label for="currentStatus" class="block text-sm font-medium text-gray-700">Current Status (Initial)</label>
+                            <select id="currentStatus" name="currentStatus" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" required>
+                                <option value="1. Checked In: Diagnostics">1. Checked In: Diagnostics</option>
+                                <option value="2. Awaiting Customer Approval">2. Awaiting Customer Approval</option>
+                                <option value="5. Ready for Pickup/Delivery">5. Ready for Pickup/Delivery</option>
+                                <!-- All options from the Status Definitions sheet -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="depositAmount" class="block text-sm font-medium text-gray-700">Deposit ($)</label>
+                            <input type="number" id="depositAmount" name="depositAmount" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" value="0" min="0">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Submission and Message -->
+                <button type="submit" class="w-full py-3 px-4 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition duration-150 shadow-md">
+                    Log Job & Check In System
+                </button>
+                <div id="submit-message" class="mt-4 p-3 rounded-lg text-sm text-center" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // CRITICAL: Replace this placeholder with the Web App URL generated from your Google Apps Script deployment (see Part 1)
+        const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set Today's Date
+            const today = new Date();
+            document.getElementById('today-date').textContent = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            // --- Mock Data Simulation (Dashboard View) ---
+            // This array simulates the data pulled from your Master Job Log spreadsheet (Sheet 1)
+            const mockJobData = [
+                { id: 'WO-1525', client: 'NW Napkin Mfg.', type: 'Onsite', status: '5. Ready for Pickup/Delivery', request: 'Final QuickBooks multi-user test.', due: '2025-10-27' },
+                { id: 'WO-1526', client: 'Elinor B.', type: 'Remote', status: '1. Checked In: Diagnostics', request: 'Router status ID issue.', due: '2025-10-28' },
+                { id: 'WO-1527', client: 'Joe\'s Place Farms', type: 'In-Shop', status: '2. Awaiting Customer Approval', request: 'Web attack remediation and Avira install.', due: '2025-10-30' },
+                { id: 'WO-1528', client: 'Essential Energy Group', type: 'Onsite', status: '6. Completed: Follow-Up Needed', request: 'Email/Calendar sync issues.', due: '2025-10-25' },
+                { id: 'WO-1529', client: 'Ariel Truss', type: 'In-Shop', status: '3. Awaiting Parts', request: 'Estimate NAS replacement.', due: '2025-11-05' },
+                { id: 'WO-1530', client: 'Lighthouse Dental', type: 'Onsite', status: '1. Checked In: Diagnostics', request: 'Pentrix Ticket Ops Slow (Needs RAM upgrade)', due: '2025-10-27' },
+            ];
+
+            const todayStr = today.toISOString().split('T')[0];
+            const twoDaysLater = new Date(today);
+            twoDaysLater.setDate(today.getDate() + 2);
+            const twoDaysLaterStr = twoDaysLater.toISOString().split('T')[0];
+
+            const todayJobs = mockJobData.filter(job => job.due === todayStr || job.status.startsWith('5. Ready'));
+            const upcomingJobs = mockJobData.filter(job => 
+                job.due > todayStr && job.due <= twoDaysLaterStr || job.status.startsWith('2. Awaiting') || job.status.startsWith('3. Awaiting')
+            );
+            
+            // --- Rendering Functions ---
+
+            const renderJobItem = (job) => {
+                const isReady = job.status.startsWith('5. Ready');
+                const badgeColor = isReady ? 'bg-green-100 text-green-700' : 
+                                     job.type === 'Onsite' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
+
+                return `
+                    <li class="p-3 border rounded-lg ${isReady ? 'border-green-300' : 'border-gray-100'} bg-white">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-gray-800">${job.id} - ${job.client}</span>
+                            <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeColor}">${isReady ? 'READY!' : job.type.toUpperCase()}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1 truncate">${job.request}</p>
+                        <div class="text-xs text-gray-500 mt-1 flex justify-between">
+                            <span>Status: ${job.status.split('. ')[1]}</span>
+                            <span class="${job.due === todayStr ? 'font-bold text-red-500' : ''}">Due: ${job.due}</span>
+                        </div>
+                    </li>
+                `;
+            };
+
+            const todayList = document.getElementById('today-list');
+            if (todayJobs.length === 0) {
+                todayList.innerHTML = `<li class="text-gray-500 italic">No urgent jobs or on-site visits scheduled for today!</li>`;
+            } else {
+                todayList.innerHTML = todayJobs.map(renderJobItem).join('');
+            }
+
+            const upcomingList = document.getElementById('upcoming-list');
+            if (upcomingJobs.length === 0) {
+                upcomingList.innerHTML = `<li class="text-gray-500 italic">No critical awaiting jobs or immediate appointments.</li>`;
+            } else {
+                upcomingList.innerHTML = upcomingJobs.map(renderJobItem).join('');
+            }
+
+
+            // --- Form Handling (Submitting to Google Apps Script) ---
+            const form = document.getElementById('job-checkin-form');
+            const messageDiv = document.getElementById('submit-message');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Check if the placeholder URL is still in use
+                if (WEB_APP_URL === "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") {
+                    displayMessage("Please replace 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' in the script with your deployed Google Apps Script URL.", 'error');
+                    return;
+                }
+
+                const data = new FormData(form);
+                const jobData = {};
+                for (let [key, value] of data.entries()) {
+                    // Collect form data, including a placeholder for empty fields the script expects
+                    jobData[key] = value;
+                }
+                
+                // Add required fields that are expected by the Apps Script but not in the form
+                jobData.dateIn = ''; // Date In is handled by the script
+                jobData.technician = ''; // Technician is handled by the script
+                jobData.jobNotes = '';
+                jobData.finalResolution = '';
+                jobData.dateCompleted = '';
+
+                displayMessage("Submitting data to Google Sheet...", 'loading');
+
+                try {
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(jobData),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        // Important: CORS is usually handled by the Apps Script deployment settings ("Anyone")
+                    });
+
+                    const result = await response.json();
+
+                    if (result.result === 'success') {
+                        displayMessage(`Success! Job ${jobData.jobId} for ${jobData.clientName} logged to Google Sheet.`, 'success');
+                        form.reset();
+                        setTimeout(() => {
+                            displayMessage("", 'hidden');
+                            openTab('dashboard'); // Switch back to dashboard after success
+                        }, 4000);
+                    } else {
+                        // Handle failure returned by the Apps Script (e.g., sheet name wrong)
+                        displayMessage(`Error logging job: ${result.message}`, 'error');
+                        console.error("Apps Script Error:", result.message);
+                    }
+
+                } catch (error) {
+                    displayMessage(`Network Error: Could not connect to the Web App URL. Check console for details.`, 'error');
+                    console.error("Fetch Error:", error);
+                }
+            });
+
+            // Helper function to update the submission message box
+            function displayMessage(message, type) {
+                messageDiv.style.display = type === 'hidden' ? 'none' : 'block';
+                messageDiv.classList.remove('bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800');
+                
+                if (type === 'success') {
+                    messageDiv.classList.add('bg-green-100', 'text-green-800');
+                } else if (type === 'error') {
+                    messageDiv.classList.add('bg-red-100', 'text-red-800');
+                } else if (type === 'loading') {
+                    messageDiv.classList.add('bg-blue-100', 'text-blue-800');
+                }
+                messageDiv.innerHTML = message;
+            }
+        });
+
+        // --- Tab Switching Logic ---
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active-tab');
+            });
+
+            document.getElementById(tabName).style.display = 'block';
+            document.getElementById(`tab-${tabName}-btn`).classList.add('active-tab');
+        }
+    </script>
+</body>
+</html>
