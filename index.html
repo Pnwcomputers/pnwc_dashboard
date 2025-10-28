@@ -13,6 +13,18 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
+        /* Style for loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -39,54 +51,47 @@
         
         <!-- Tab 1: Dashboard View -->
         <div id="dashboard-view" class="tab-content space-y-8">
-            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">Today's Focus</h2>
+            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">Today's Focus & Job Status</h2>
 
-            <!-- Onsite Appointments/Today Todo List (Dynamically Populated) -->
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-                <h3 class="text-xl font-semibold text-blue-800 mb-4 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Onsite Schedule & Upcoming Tasks
-                </h3>
-                <div id="schedule-list" class="space-y-3">
-                    <!-- Schedule items will be inserted here by JavaScript -->
-                    <p id="schedule-loading" class="text-gray-500 italic">Loading today's schedule...</p>
-                    <p id="schedule-error" class="text-red-500 font-semibold hidden">Error loading schedule. Check Apps Script deployment.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- COLUMN 1: Job Status Overview (Dynamically Populated) -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-indigo-100 h-fit">
+                    <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Shop Job Status Counts
+                    </h3>
+                    <div id="status-counts" class="space-y-3">
+                        <p class="text-gray-500 italic flex items-center"><span class="spinner mr-2"></span> Loading Job Counts...</p>
+                        <!-- Dynamic status cards will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- COLUMN 2 & 3: Onsite Schedule/Upcoming Tasks (Dynamically Populated) -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-blue-100">
+                    <h3 class="text-xl font-semibold text-blue-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Onsite Schedule & Upcoming Tasks
+                    </h3>
+                    <div id="schedule-list" class="space-y-3">
+                        <!-- Schedule items will be inserted here by JavaScript -->
+                        <p id="schedule-loading" class="text-gray-500 italic flex items-center"><span class="spinner mr-2"></span> Loading schedule...</p>
+                        <p id="schedule-error" class="text-red-500 font-semibold hidden">Error loading schedule. Check Apps Script deployment.</p>
+                    </div>
                 </div>
             </div>
             
-            <!-- General Job Status Overview (Mock/Placeholder until advanced read is added) -->
-            <div class="bg-white p-6 rounded-xl shadow-lg border border-indigo-100">
-                <h3 class="text-xl font-semibold text-indigo-800 mb-4 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Current Shop Job Overview (Mock Data)
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
-                        <span class="font-medium text-gray-700">Awaiting Customer Approval:</span>
-                        <span class="text-orange-500 font-bold">4 Jobs</span>
-                    </div>
-                     <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
-                        <span class="font-medium text-gray-700">Awaiting Parts (Vendor Side):</span>
-                        <span class="text-yellow-600 font-bold">7 Jobs</span>
-                    </div>
-                    <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
-                        <span class="font-medium text-gray-700">Ready for Pickup/Delivery:</span>
-                        <span class="text-green-600 font-bold">2 Jobs</span>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
         <!-- Tab 2: New Job Check-In Form -->
         <div id="checkin-view" class="tab-content hidden">
             <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">New Job Check-In Form</h2>
 
-            <div id="message-box" class="hidden p-4 mb-4 rounded-lg text-center font-semibold transition-all duration-500"></div>
+            <div id="message-box" class="hidden p-4 mb-4 rounded-xl text-center font-semibold transition-all duration-500"></div>
 
             <form id="job-checkin-form" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 space-y-6">
                 
@@ -163,8 +168,8 @@
 </div>
 
 <script>
-    // CRITICAL: Replace this placeholder with the Web App URL generated from your Google Apps Script deployment (see setup guide)
-    const WEB_APP_URL = https://script.google.com/macros/s/AKfycbz_69SzCgirUDv1tmrK5kX-bizQ12guTtRUFcAq_vzSAKvYmgWgCPhqo_l2_zp5s0uu2A/exec; 
+    // CRITICAL: This URL is specific to your deployed Google Apps Script.
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz_69SzCgirUDv1tmrK5kX-bizQ12guTtRUFcAq_vzSAKvYmgWgCPhqo_l2_zp5s0uu2A/exec"; 
 
     // --- Tab Switching Logic ---
     function showTab(tabName) {
@@ -187,6 +192,7 @@
         // Load data whenever the dashboard is viewed
         if (tabName === 'dashboard') {
             fetchScheduleData();
+            fetchMasterLogStatus();
         }
     }
 
@@ -219,13 +225,6 @@
         const formData = new FormData(event.target);
         const data = Object.fromEntries(formData.entries());
 
-        if (WEB_APP_URL.includes("YOUR_APPS_SCRIPT_WEB_APP_URL_HERE")) {
-            showMessage('error', "ERROR: Web App URL is not configured. Please update the 'WEB_APP_URL' constant in the code.");
-            button.disabled = false;
-            button.textContent = 'Log Job & Check In System';
-            return;
-        }
-
         try {
             const response = await fetch(WEB_APP_URL, {
                 method: 'POST',
@@ -236,14 +235,12 @@
                 body: JSON.stringify(data)
             });
 
-            // Apps Script response is often wrapped in a text response, we must parse it manually
             const textResponse = await response.text();
             const result = JSON.parse(textResponse);
 
             if (result.result === 'success') {
                 showMessage('success', `Success! Job ${data.jobId} logged in row ${result.row_count}.`);
                 event.target.reset();
-                // Switch back to dashboard after successful submission
                 showTab('dashboard'); 
             } else {
                 showMessage('error', `Error logging job: ${result.message}`);
@@ -258,7 +255,52 @@
         }
     });
 
-    // --- Data Retrieval (GET) Logic for Dashboard ---
+    // --- Data Retrieval (GET) Logic for Master Log Status ---
+    async function fetchMasterLogStatus() {
+        const container = document.getElementById('status-counts');
+        container.innerHTML = `<p class="text-gray-500 italic flex items-center"><span class="spinner mr-2"></span> Loading Job Counts...</p>`;
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}?sheet=MasterLogStatus`, {
+                method: 'GET',
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const textResponse = await response.text();
+            const counts = JSON.parse(textResponse);
+            
+            // Check for valid status data
+            if (!counts || typeof counts !== 'object') {
+                 throw new Error("Invalid data structure returned for job counts.");
+            }
+
+            container.innerHTML = `
+                <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500">
+                    <span class="font-medium text-gray-700">Awaiting Customer Approval (2):</span>
+                    <span class="text-orange-500 font-bold text-xl">${counts['2. Awaiting Customer Approval'] || 0} Jobs</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-600">
+                    <span class="font-medium text-gray-700">Awaiting Parts (3):</span>
+                    <span class="text-yellow-600 font-bold text-xl">${counts['3. Awaiting Parts (Vendor Side)'] || 0} Jobs</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-600">
+                    <span class="font-medium text-gray-700">Ready for Pickup/Delivery (5):</span>
+                    <span class="text-green-600 font-bold text-xl">${counts['5. Ready for Pickup/Delivery'] || 0} Jobs</span>
+                </div>
+            `;
+            
+        } catch (error) {
+            console.error('Error fetching job counts:', error);
+            container.innerHTML = `<p class="text-red-500 font-semibold">Error loading job counts. Check console/Apps Script.</p>`;
+        }
+    }
+
+
+    // --- Data Retrieval (GET) Logic for Onsite Schedule ---
     async function fetchScheduleData() {
         const list = document.getElementById('schedule-list');
         const loading = document.getElementById('schedule-loading');
@@ -267,13 +309,6 @@
         list.innerHTML = '';
         loading.classList.remove('hidden');
         errorMsg.classList.add('hidden');
-
-        if (WEB_APP_URL.includes(https://script.google.com/macros/s/AKfycbyYtl6oDNkGC1NDYj3qu1cZGQFKWVwjaJH4cynWcHhbZ4Panqzu3dWm0iLZKPf-s8r0WA/exec)) {
-            errorMsg.textContent = "ERROR: Web App URL not configured. Schedule cannot load.";
-            errorMsg.classList.remove('hidden');
-            loading.classList.add('hidden');
-            return;
-        }
 
         try {
             const response = await fetch(WEB_APP_URL, {
@@ -285,44 +320,48 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // The response from doGet is raw JSON content
+            // The response from doGet (no 'sheet' parameter) is the calendar schedule
             const data = await response.json(); 
-
+            const today = new Date().toLocaleDateString();
             loading.classList.add('hidden');
 
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 list.innerHTML = '<p class="text-gray-500 italic">No onsite appointments scheduled for the next 14 days.</p>';
                 return;
             }
 
-            // Filter for events that are happening today (simple date comparison)
-            const today = new Date().toLocaleDateString();
-            const todayEvents = data.filter(item => {
-                // Event Date is the first column in the sheet, e.g., "10/27/2025"
-                return new Date(item.Event_Date).toLocaleDateString() === today;
+            // Filter for events that are today and in the future
+            const now = new Date();
+            const events = data.filter(item => {
+                 const eventDate = new Date(item.Event_Date);
+                 return eventDate >= now || eventDate.toLocaleDateString() === today; // Include all future events and today's events
             });
+
+            if (events.length === 0) {
+                 list.innerHTML = '<p class="text-gray-500 italic">No appointments scheduled for today or upcoming days.</p>';
+                 return;
+            }
+
+            // Group events into Today and Upcoming
+            const todayEvents = events.filter(item => new Date(item.Event_Date).toLocaleDateString() === today);
+            const upcomingEvents = events.filter(item => new Date(item.Event_Date).toLocaleDateString() !== today);
             
-            const upcomingEvents = data.filter(item => {
-                // Check if the event is NOT today and is in the future
-                const eventDate = new Date(item.Event_Date);
-                return eventDate > new Date() && eventDate.toLocaleDateString() !== today;
-            });
-
-
             // --- Render Today's Events ---
             if (todayEvents.length > 0) {
-                list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 mb-2 mt-4">Today, ' + today + '</h4>';
+                list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 mt-2 border-b border-gray-200 pb-1">Today, ${today}</h4>`;
                 todayEvents.forEach(item => {
                     list.innerHTML += createScheduleItem(item, 'bg-blue-50 border-blue-200');
                 });
             } else {
-                list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 mb-2 mt-4">Today:</h4><p class="text-gray-500 italic">No appointments scheduled for today.</p>';
+                list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 mt-2 border-b border-gray-200 pb-1">Today, ${today}</h4><p class="text-gray-500 italic">No appointments scheduled for today.</p>`;
             }
 
             // --- Render Upcoming Events ---
             if (upcomingEvents.length > 0) {
-                list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 border-t pt-3 mt-4">Upcoming Schedule</h4>';
-                 upcomingEvents.forEach(item => {
+                list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 border-t pt-3 mt-4 border-gray-200">Upcoming Schedule</h4>';
+                 // Sort upcoming events by date
+                upcomingEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
+                upcomingEvents.forEach(item => {
                     list.innerHTML += createScheduleItem(item, 'bg-gray-50 border-gray-200');
                 });
             }
@@ -332,16 +371,32 @@
             console.error('Error fetching schedule:', error);
             loading.classList.add('hidden');
             errorMsg.classList.remove('hidden');
-            errorMsg.textContent = `Error: Failed to fetch schedule. Check console for details.`;
+            errorMsg.textContent = `Error: Failed to fetch schedule. Check console/Apps Script deployment.`;
         }
     }
 
     function createScheduleItem(item, bgColor) {
+        // Format date and location for display
+        const displayDate = new Date(item.Event_Date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const locationText = item['Location/Address'] || 'N/A';
+        const notesText = item['Event Notes'] ? `<span class="text-xs text-gray-400 mt-1 block">${item['Event Notes']}</span>` : '';
+        
         return `
-            <div class="p-3 ${bgColor} rounded-lg shadow-sm flex flex-col sm:flex-row justify-between">
-                <div class="sm:w-1/4 font-semibold text-blue-700">${item.Time_Start/End}</div>
-                <div class="sm:w-1/4 font-semibold text-gray-800">${item.Client_Name} (${item.Job_ID})</div>
-                <div class="sm:w-1/2 text-sm text-gray-600 truncate">${item.Location/Address}</div>
+            <div class="p-3 ${bgColor} rounded-lg shadow-sm flex flex-col justify-between border-l-4 border-blue-500">
+                <div class="flex justify-between items-start">
+                    <div class="font-semibold text-blue-800 text-base">
+                        ${item['Time_Start/End'] || 'Time N/A'}
+                        <span class="text-sm text-gray-600 ml-2">(${displayDate})</span>
+                    </div>
+                    <div class="font-semibold text-gray-800 text-right">
+                        ${item.Client_Name}
+                        <span class="block text-sm text-gray-500 font-normal">${item.Job_ID || 'No Job ID'}</span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                     <span class="font-medium text-gray-700">Location:</span> ${locationText}
+                     ${notesText}
+                </div>
             </div>
         `;
     }
