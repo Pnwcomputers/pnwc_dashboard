@@ -3,11 +3,239 @@ const MASTER_LOG_SHEET_NAME = 'Master Job Log';
 const SCHEDULE_SHEET_NAME = 'Onsite Schedule';
 const CALENDAR_NAME = 'Pacific NW Computers';
 
+// ============================================
+// EMAIL FUNCTIONS (NEW)
+// ============================================
+
+/**
+ * Send confirmation email when a new job is checked in
+ */
+function sendConfirmationEmail(jobData) {
+  try {
+    const subject = `Service Confirmation - Job #${jobData.jobId} - Pacific NW Computers`;
+    
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">Pacific NW Computers</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px;">Service Request Confirmed</p>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb; border: 1px solid #e5e7eb;">
+          <p style="font-size: 16px; color: #374151; margin-top: 0;">Dear ${jobData.clientName},</p>
+          
+          <p style="font-size: 16px; color: #374151;">Thank you for choosing Pacific NW Computers! Your service request has been received and logged into our system.</p>
+          
+          <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+            <h2 style="color: #1f2937; margin-top: 0; font-size: 20px;">Job Details</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Job ID:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: bold;">${jobData.jobId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Service Type:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.serviceType}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Due Date:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.dueDate || 'TBD'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Current Status:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.currentStatus}</td>
+              </tr>
+              ${jobData.systemMake ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">System:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.systemMake}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          
+          ${jobData.initialRequest ? `
+          <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1e40af; margin-top: 0; font-size: 16px;">Your Request:</h3>
+            <p style="color: #374151; margin-bottom: 0;">${jobData.initialRequest}</p>
+          </div>
+          ` : ''}
+          
+          <p style="font-size: 16px; color: #374151;">We will keep you updated on the progress of your service. If you have any questions, please don't hesitate to contact us.</p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">Best regards,</p>
+            <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin: 5px 0;">Pacific NW Computers Team</p>
+          </div>
+        </div>
+        
+        <div style="background-color: #1f2937; color: #9ca3af; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 5px 0;">This is an automated confirmation email.</p>
+          <p style="margin: 5px 0;">Please keep this email for your records.</p>
+        </div>
+      </div>
+    `;
+    
+    const plainBody = `
+Dear ${jobData.clientName},
+
+Thank you for choosing Pacific NW Computers! Your service request has been received and logged into our system.
+
+JOB DETAILS
+-----------
+Job ID: ${jobData.jobId}
+Service Type: ${jobData.serviceType}
+Due Date: ${jobData.dueDate || 'TBD'}
+Current Status: ${jobData.currentStatus}
+${jobData.systemMake ? 'System: ' + jobData.systemMake : ''}
+
+${jobData.initialRequest ? 'YOUR REQUEST:\n' + jobData.initialRequest : ''}
+
+We will keep you updated on the progress of your service. If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+Pacific NW Computers Team
+
+---
+This is an automated confirmation email.
+Please keep this email for your records.
+    `;
+    
+    MailApp.sendEmail({
+      to: jobData.clientEmail,
+      subject: subject,
+      body: plainBody,
+      htmlBody: htmlBody
+    });
+    
+    Logger.log('Confirmation email sent to: ' + jobData.clientEmail);
+  } catch (error) {
+    Logger.log('Error sending confirmation email: ' + error.message);
+  }
+}
+
+/**
+ * Send update email when job status or notes change
+ */
+function sendUpdateEmail(jobData, changes) {
+  try {
+    const subject = `Job Update - #${jobData.Job_ID} - Pacific NW Computers`;
+    
+    let changesHtml = '';
+    if (changes.statusChanged) {
+      changesHtml += `
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b;">
+          <h3 style="color: #92400e; margin-top: 0; font-size: 16px;">✓ Status Updated</h3>
+          <p style="color: #78350f; margin-bottom: 0; font-size: 15px;"><strong>${jobData.Status}</strong></p>
+        </div>
+      `;
+    }
+    
+    if (changes.notesChanged && jobData.Job_Notes) {
+      changesHtml += `
+        <div style="background-color: #dbeafe; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #3b82f6;">
+          <h3 style="color: #1e40af; margin-top: 0; font-size: 16px;">📝 New Notes Added</h3>
+          <p style="color: #1e3a8a; margin-bottom: 0; white-space: pre-wrap;">${jobData.Job_Notes}</p>
+        </div>
+      `;
+    }
+    
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">Pacific NW Computers</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px;">Service Update</p>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb; border: 1px solid #e5e7eb;">
+          <p style="font-size: 16px; color: #374151; margin-top: 0;">Dear ${jobData.Client_Name},</p>
+          
+          <p style="font-size: 16px; color: #374151;">There's an update on your service request <strong>Job #${jobData.Job_ID}</strong>.</p>
+          
+          ${changesHtml}
+          
+          <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1f2937; margin-top: 0; font-size: 18px;">Current Job Information</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Job ID:</td>
+                <td style="padding: 8px 0; color: #1f2937; font-weight: bold;">${jobData.Job_ID}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Status:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.Status}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Service Type:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.Service_Type}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Due Date:</td>
+                <td style="padding: 8px 0; color: #1f2937;">${jobData.Due_Date || 'TBD'}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="font-size: 16px; color: #374151;">If you have any questions about this update, please don't hesitate to contact us.</p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px; margin: 5px 0;">Best regards,</p>
+            <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin: 5px 0;">Pacific NW Computers Team</p>
+          </div>
+        </div>
+        
+        <div style="background-color: #1f2937; color: #9ca3af; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 5px 0;">This is an automated notification email.</p>
+        </div>
+      </div>
+    `;
+    
+    const plainBody = `
+Dear ${jobData.Client_Name},
+
+There's an update on your service request Job #${jobData.Job_ID}.
+
+${changes.statusChanged ? `STATUS UPDATED: ${jobData.Status}\n` : ''}
+${changes.notesChanged && jobData.Job_Notes ? `\nNEW NOTES:\n${jobData.Job_Notes}\n` : ''}
+
+CURRENT JOB INFORMATION
+-----------------------
+Job ID: ${jobData.Job_ID}
+Status: ${jobData.Status}
+Service Type: ${jobData.Service_Type}
+Due Date: ${jobData.Due_Date || 'TBD'}
+
+If you have any questions about this update, please don't hesitate to contact us.
+
+Best regards,
+Pacific NW Computers Team
+
+---
+This is an automated notification email.
+    `;
+    
+    MailApp.sendEmail({
+      to: jobData.Client_Email,
+      subject: subject,
+      body: plainBody,
+      htmlBody: htmlBody
+    });
+    
+    Logger.log('Update email sent to: ' + jobData.Client_Email);
+  } catch (error) {
+    Logger.log('Error sending update email: ' + error.message);
+  }
+}
+
+// ============================================
+// ORIGINAL FUNCTIONS (MODIFIED)
+// ============================================
+
 function doPost(e) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
   
-    // Check if this is an update action
+  // Check if this is an update action
   if (e.parameter && e.parameter.action === 'updateJob') {
     return updateJob(e);
   }
@@ -54,7 +282,13 @@ function doPost(e) {
   try {
     sheet.appendRow(rowData);
     SpreadsheetApp.flush();
-    return createJsonResponse({ result: 'success', message: `Job ${data.jobId} logged successfully!` });
+    
+    // ✨ NEW: Send confirmation email
+    if (data.clientEmail) {
+      sendConfirmationEmail(data);
+    }
+    
+    return createJsonResponse({ result: 'success', message: `Job ${data.jobId} logged successfully! Confirmation email sent.` });
   } catch (error) {
     Logger.log('Sheet append error: ' + error.message);
     return createJsonResponse({ result: 'error', message: error.message });
@@ -65,14 +299,14 @@ function doGet(e) {
   const action = e.parameter.action;
   const status = e.parameter.status;
   const sheetParam = e.parameter.sheet;
-  const rowIndex = e.parameter.rowIndex;  // ← ADD THIS - was missing!
+  const rowIndex = e.parameter.rowIndex;
   
-  // NEW: Handle get all jobs request (for Job Log view)
+  // Handle get all jobs request (for Job Log view)
   if (action === 'getAllJobs') {
     return getAllJobs();
   }
   
-  // NEW: Handle get single job by row index (for editing)
+  // Handle get single job by row index (for editing)
   if (action === 'getJobByRow') {
     return getJobByRow(rowIndex);
   }
@@ -97,37 +331,32 @@ function doGet(e) {
   return createJsonResponse(scheduleData);
 }
 
-// NEW FUNCTION: Get jobs by status
 function getJobsByStatus(status) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Master Job Log'); // Use your actual sheet name
+  const sheet = ss.getSheetByName('Master Job Log');
   const data = sheet.getDataRange().getValues();
   
-  // Assuming first row is headers
   const headers = data[0];
   const jobs = [];
   
-  // Find the column index for Status
-  const statusColIndex = headers.indexOf('Status'); // Adjust column name if different
+  const statusColIndex = headers.indexOf('Status');
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const jobStatus = row[statusColIndex];
     
-    // If status is 'all', include all jobs, otherwise filter by status
     if (status === 'all' || jobStatus === status) {
-      // Create job object with all relevant fields
       const job = {
-      Job_ID: row[headers.indexOf('Job ID')],
-      Client_Name: row[headers.indexOf('Client Name')],
-      Client_Email: row[headers.indexOf('Client Email')],
-      Client_Phone: row[headers.indexOf('Client Phone')],
-      Service_Type: row[headers.indexOf('Service Type')],
-      Due_Date: row[headers.indexOf('Due Date')] ? Utilities.formatDate(new Date(row[headers.indexOf('Due Date')]), Session.getScriptTimeZone(), 'MM/dd/yyyy') : '',
-      Status: jobStatus,
-      System_Make_Model: row[headers.indexOf('System Make/Model')],  // ← CHANGED: / instead of &
-      Initial_Request: row[headers.indexOf('Initial Request')]
-    };
+        Job_ID: row[headers.indexOf('Job ID')],
+        Client_Name: row[headers.indexOf('Client Name')],
+        Client_Email: row[headers.indexOf('Client Email')],
+        Client_Phone: row[headers.indexOf('Client Phone')],
+        Service_Type: row[headers.indexOf('Service Type')],
+        Due_Date: row[headers.indexOf('Due Date')] ? Utilities.formatDate(new Date(row[headers.indexOf('Due Date')]), Session.getScriptTimeZone(), 'MM/dd/yyyy') : '',
+        Status: jobStatus,
+        System_Make_Model: row[headers.indexOf('System Make/Model')],
+        Initial_Request: row[headers.indexOf('Initial Request')]
+      };
       jobs.push(job);
     }
   }
@@ -168,7 +397,6 @@ function getMasterLogStatusCounts(sheet) {
     };
   }
   
-  // Find Status column dynamically
   const headers = values[0];
   const statusColIndex = headers.indexOf('Status');
   
@@ -288,7 +516,6 @@ function getAllJobs() {
   const headers = data[0];
   const jobs = [];
   
-  // Find column indices
   const jobIdCol = headers.indexOf('Job ID');
   const dateInCol = headers.indexOf('Date In');
   const serviceTypeCol = headers.indexOf('Service Type');
@@ -304,12 +531,11 @@ function getAllJobs() {
   const resolutionCol = headers.indexOf('Final Resolution');
   const completedCol = headers.indexOf('Date Completed');
   
-  // Process each row (skip header row)
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     
     const job = {
-      rowIndex: i + 1, // Row index in sheet (1-based, accounting for header)
+      rowIndex: i + 1,
       Job_ID: row[jobIdCol] || '',
       Date_In: row[dateInCol] ? formatDate(row[dateInCol]) : '',
       Service_Type: row[serviceTypeCol] || '',
@@ -331,7 +557,6 @@ function getAllJobs() {
   return createJsonResponse(jobs);
 }
 
-// NEW FUNCTION: Get a single job by row index
 function getJobByRow(rowIndex) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
@@ -342,9 +567,8 @@ function getJobByRow(rowIndex) {
   }
   
   const headers = data[0];
-  const row = data[rowIndex - 1]; // Convert to 0-based index
+  const row = data[rowIndex - 1];
   
-  // Find column indices
   const jobIdCol = headers.indexOf('Job ID');
   const dateInCol = headers.indexOf('Date In');
   const serviceTypeCol = headers.indexOf('Service Type');
@@ -381,7 +605,7 @@ function getJobByRow(rowIndex) {
   return createJsonResponse(job);
 }
 
-// NEW FUNCTION: Update a job in the Master Job Log
+// ✨ MODIFIED: Update job with email notifications
 function updateJob(e) {
   try {
     const data = JSON.parse(e.parameter.data);
@@ -395,6 +619,13 @@ function updateJob(e) {
     const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
+    // ✨ NEW: Get old values to compare changes
+    const oldRow = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const statusCol = headers.indexOf('Status');
+    const notesCol = headers.indexOf('Job Notes');
+    const oldStatus = oldRow[statusCol];
+    const oldNotes = oldRow[notesCol];
+    
     // Find column indices
     const serviceTypeCol = headers.indexOf('Service Type') + 1;
     const clientNameCol = headers.indexOf('Client Name') + 1;
@@ -402,9 +633,9 @@ function updateJob(e) {
     const clientPhoneCol = headers.indexOf('Client Phone') + 1;
     const systemCol = headers.indexOf('System Make/Model') + 1;
     const dueDateCol = headers.indexOf('Due Date') + 1;
-    const statusCol = headers.indexOf('Status') + 1;
+    const statusColNum = headers.indexOf('Status') + 1;
     const requestCol = headers.indexOf('Initial Request') + 1;
-    const notesCol = headers.indexOf('Job Notes') + 1;
+    const notesColNum = headers.indexOf('Job Notes') + 1;
     
     // Update the cells
     if (clientNameCol > 0) sheet.getRange(rowIndex, clientNameCol).setValue(data.Client_Name || '');
@@ -412,12 +643,23 @@ function updateJob(e) {
     if (clientPhoneCol > 0) sheet.getRange(rowIndex, clientPhoneCol).setValue(data.Client_Phone || '');
     if (serviceTypeCol > 0) sheet.getRange(rowIndex, serviceTypeCol).setValue(data.Service_Type || '');
     if (dueDateCol > 0) sheet.getRange(rowIndex, dueDateCol).setValue(data.Due_Date ? new Date(data.Due_Date) : '');
-    if (statusCol > 0) sheet.getRange(rowIndex, statusCol).setValue(data.Status || '');
+    if (statusColNum > 0) sheet.getRange(rowIndex, statusColNum).setValue(data.Status || '');
     if (systemCol > 0) sheet.getRange(rowIndex, systemCol).setValue(data.System_Make_Model || '');
     if (requestCol > 0) sheet.getRange(rowIndex, requestCol).setValue(data.Initial_Request || '');
-    if (notesCol > 0) sheet.getRange(rowIndex, notesCol).setValue(data.Job_Notes || '');
+    if (notesColNum > 0) sheet.getRange(rowIndex, notesColNum).setValue(data.Job_Notes || '');
     
     SpreadsheetApp.flush();
+    
+    // ✨ NEW: Check if status or notes changed and send email
+    const statusChanged = oldStatus !== data.Status;
+    const notesChanged = oldNotes !== data.Job_Notes;
+    
+    if ((statusChanged || notesChanged) && data.Client_Email) {
+      sendUpdateEmail(data, {
+        statusChanged: statusChanged,
+        notesChanged: notesChanged
+      });
+    }
     
     return createJsonResponse({ result: 'success', message: 'Job updated successfully!' });
   } catch (error) {
@@ -426,7 +668,6 @@ function updateJob(e) {
   }
 }
 
-// Helper function to format dates for display
 function formatDate(date) {
   if (!date) return '';
   try {
@@ -437,7 +678,6 @@ function formatDate(date) {
   }
 }
 
-// Helper function to format dates for input fields (YYYY-MM-DD)
 function formatDateForInput(date) {
   if (!date) return '';
   try {
