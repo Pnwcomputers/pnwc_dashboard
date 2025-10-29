@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PNW Computers Job Tracker - Login</title>
+    <title>PNW Computers Job Tracker</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -24,6 +24,7 @@
         <p class="text-gray-600">Daily Dashboard & Job Check-In System</p>
     </header>
 
+    <!-- Login View -->
     <div id="login-view" class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mt-12">
         <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Staff Login</h2>
         <form id="login-form" class="space-y-6">
@@ -38,10 +39,14 @@
         </form>
     </div>
     
-    <!-- ✨ NEW: Header bar with logout and refresh buttons -->
+    <!-- Header Bar with Refresh and Logout -->
     <div id="app-header" class="w-full max-w-6xl mx-auto mb-4 flex justify-between items-center app-content-hidden">
         <div class="flex items-center space-x-3">
-            <button onclick="refreshDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
+            <button onclick="refreshDashboard(true)" id="sync-calendar-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
+                <span>📅</span>
+                <span>Sync Calendar</span>
+            </button>
+            <button onclick="refreshDashboard(false)" id="refresh-dashboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
                 <span id="refresh-dashboard-icon">🔄</span>
                 <span>Refresh Data</span>
             </button>
@@ -52,13 +57,17 @@
         </button>
     </div>
     
+    <!-- Navigation Tabs -->
     <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200 app-content-hidden">
         <button id="dashboard-tab" onclick="showTab('dashboard')" class="py-2 px-4 text-sm sm:text-lg font-medium text-blue-700 border-b-4 border-blue-700">Dashboard</button>
         <button id="checkin-tab" onclick="showTab('checkin')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">New Job Check-In</button>
         <button id="joblog-tab" onclick="showTab('joblog')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Job Log</button>
     </nav>
 
+    <!-- Main Content -->
     <div id="main-app-content" class="max-w-6xl mx-auto w-full app-content-hidden">
+        
+        <!-- Dashboard View -->
         <div id="dashboard-view" class="tab-content space-y-8">
             <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">Today's Focus & Job Status</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -78,23 +87,25 @@
             </div>
         </div>
 
+        <!-- Check-In View -->
         <div id="checkin-view" class="tab-content hidden">
             <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">New Job Check-In Form</h2>
             <div id="message-box" class="hidden p-4 mb-4 rounded-xl text-center font-semibold"></div>
             <form id="job-checkin-form" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 space-y-6">
                 <fieldset class="border border-gray-300 p-4 rounded-lg">
-                    <legend class="text-lg font-semibold text-gray-700 px-2">Client & Job ID</legend>
+                    <legend class="text-lg font-semibold text-gray-700 px-2">Client Information</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="jobId" class="block text-sm font-medium text-gray-700">Job ID</label>
-                            <input type="text" id="jobId" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        <div class="md:col-span-2">
+                            <label for="jobId" class="block text-sm font-medium text-gray-700">Job ID (Auto-Generated)</label>
+                            <input type="text" id="jobId" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-gray-100 text-gray-600 font-mono" placeholder="Will be generated automatically...">
+                            <p class="text-xs text-gray-500 mt-1">Job ID will be created based on client name and date</p>
                         </div>
                         <div>
-                            <label for="clientName" class="block text-sm font-medium text-gray-700">Client Name</label>
+                            <label for="clientName" class="block text-sm font-medium text-gray-700">Client Name *</label>
                             <input type="text" id="clientName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
                         </div>
                         <div>
-                            <label for="clientEmail" class="block text-sm font-medium text-gray-700">Client Email</label>
+                            <label for="clientEmail" class="block text-sm font-medium text-gray-700">Client Email *</label>
                             <input type="email" id="clientEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
                         </div>
                         <div>
@@ -151,6 +162,7 @@
             </form>
         </div>
 
+        <!-- Job Log View -->
         <div id="joblog-view" class="tab-content hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">Master Job Log</h2>
@@ -168,6 +180,7 @@
     </div>
 </div>
 
+<!-- Job Details Modal -->
 <div id="job-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
@@ -177,22 +190,22 @@
         <div id="modal-content" class="p-6 overflow-y-auto flex-1">
             <div class="flex items-center justify-center py-12">
                 <span class="spinner mr-2"></span>
-                <span class="text-gray-500">Loading jobs...</span>
+                <span class="text-gray-500">Loading...</span>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx7LfJ16FHGO5NIo4fOmrcVmQ-gBCX2HfSdsd3wlbLYQJrPbKR3aRr94pfdwI-IhX0P3A/exec';
+// ⚙️ CONFIGURATION - UPDATE THIS WITH YOUR WEB APP URL
+const WEB_APP_URL = 'YOUR_WEB_APP_URL_HERE';
 const MASTER_PASSWORD = 'Numbers11!';
-
-// ✨ NEW: Session management
 const SESSION_KEY = 'pnw_computers_logged_in';
 
-/**
- * ✨ NEW: Check if user is already logged in on page load
- */
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
+
 function checkSession() {
     const isLoggedIn = sessionStorage.getItem(SESSION_KEY);
     if (isLoggedIn === 'true') {
@@ -200,9 +213,6 @@ function checkSession() {
     }
 }
 
-/**
- * Login Functionality
- */
 function attemptLogin(e) {
     e.preventDefault();
     const passwordInput = document.getElementById('password');
@@ -212,7 +222,6 @@ function attemptLogin(e) {
     loginMessage.classList.add('hidden');
 
     if (enteredPassword === MASTER_PASSWORD) {
-        // ✨ NEW: Save login state to session
         sessionStorage.setItem(SESSION_KEY, 'true');
         showApp();
     } else {
@@ -223,63 +232,110 @@ function attemptLogin(e) {
     }
 }
 
-/**
- * ✨ NEW: Logout function
- */
 function logout() {
     sessionStorage.removeItem(SESSION_KEY);
     location.reload();
 }
 
-/**
- * ✨ NEW: Refresh dashboard data without reloading page
- */
-function refreshDashboard() {
+function showApp() {
+    document.getElementById('login-view').classList.add('hidden');
+    document.getElementById('app-header').classList.remove('app-content-hidden');
+    document.getElementById('app-nav').classList.remove('app-content-hidden');
+    document.getElementById('main-app-content').classList.remove('app-content-hidden');
+    showTab('dashboard');
+}
+
+// ============================================
+// DASHBOARD REFRESH
+// ============================================
+
+async function refreshDashboard(syncCalendar = false) {
     const icon = document.getElementById('refresh-dashboard-icon');
+    const buttonText = document.querySelector('#refresh-dashboard-btn span:last-child');
+    
     icon.classList.add('rotate-icon');
     
-    // Reload both dashboard sections
+    if (syncCalendar) {
+        buttonText.textContent = 'Syncing Calendar...';
+        try {
+            const syncResponse = await fetch(`${WEB_APP_URL}?action=syncCalendar`);
+            const syncResult = await syncResponse.json();
+            
+            if (syncResult.result !== 'success') {
+                console.error('Calendar sync error:', syncResult.message);
+            }
+        } catch (error) {
+            console.error('Calendar sync error:', error);
+        }
+        buttonText.textContent = 'Refresh Data';
+    }
+    
     fetchJobStatusCounts();
     fetchScheduleData();
     
-    // Update last refresh time
     const now = new Date();
     const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     document.getElementById('last-refresh').textContent = `Last updated: ${timeString}`;
     
-    // Remove rotation after animation
     setTimeout(() => {
         icon.classList.remove('rotate-icon');
     }, 500);
 }
 
-function showApp() {
-    // Hide the login view
-    document.getElementById('login-view').classList.add('hidden');
-    // Show the navigation, header, and main content
-    document.getElementById('app-header').classList.remove('app-content-hidden');
-    document.getElementById('app-nav').classList.remove('app-content-hidden');
-    document.getElementById('main-app-content').classList.remove('app-content-hidden');
-    // Initialize the dashboard view
-    showTab('dashboard');
+// ============================================
+// AUTO-GENERATE JOB ID PREVIEW
+// ============================================
+
+function generateInitials(name) {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return parts[0].substring(0, 2).toUpperCase();
+    } else {
+        const first = parts[0][0].toUpperCase();
+        const last = parts[parts.length - 1][0].toUpperCase();
+        return first + last;
+    }
 }
 
-/**
- * Initialization and Event Listeners
- */
+function generateDateString() {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const year = String(now.getFullYear()).substring(2);
+    return `${month}${day}${year}`;
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
 document.addEventListener('DOMContentLoaded', () => {
-    // ✨ NEW: Check for existing session on page load
     checkSession();
     
-    // Add login form submission handler
     document.getElementById('login-form').addEventListener('submit', attemptLogin);
+    
+    // Auto-generate Job ID preview
+    document.getElementById('clientName').addEventListener('input', function(e) {
+        const name = e.target.value.trim();
+        if (name) {
+            const initials = generateInitials(name);
+            const dateStr = generateDateString();
+            const preview = `${initials}-${dateStr}-##`;
+            document.getElementById('jobId').value = preview;
+            document.getElementById('jobId').classList.remove('text-gray-600');
+            document.getElementById('jobId').classList.add('text-blue-600', 'font-semibold');
+        } else {
+            document.getElementById('jobId').value = '';
+            document.getElementById('jobId').classList.remove('text-blue-600', 'font-semibold');
+            document.getElementById('jobId').classList.add('text-gray-600');
+        }
+    });
 
-    // Add job check-in form submission handler
+    // Job check-in form submission
     document.getElementById('job-checkin-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const jobData = {
-            jobId: document.getElementById('jobId').value,
             clientName: document.getElementById('clientName').value,
             clientEmail: document.getElementById('clientEmail').value,
             clientPhone: document.getElementById('clientPhone').value,
@@ -312,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageBox.classList.remove('bg-blue-100', 'text-blue-700');
                 messageBox.classList.add('bg-green-100', 'text-green-700');
                 document.getElementById('job-checkin-form').reset();
+                document.getElementById('jobId').value = '';
             } else {
                 throw new Error(result.message || 'Unknown error');
             }
@@ -323,16 +380,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }); 
 });
 
+// ============================================
+// TAB NAVIGATION
+// ============================================
+
 function showTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
     document.querySelectorAll('nav button').forEach(b => {
         b.classList.remove('text-blue-700', 'border-b-4', 'border-blue-700');
         b.classList.add('text-gray-500');
     });
+    
     if (tabName === 'dashboard') {
         document.getElementById('dashboard-view').classList.remove('hidden');
         document.getElementById('dashboard-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
-        // ✨ MODIFIED: Always reload data when switching to dashboard
         fetchJobStatusCounts();
         fetchScheduleData();
     } else if (tabName === 'checkin') {
@@ -345,6 +406,10 @@ function showTab(tabName) {
     }
 }
 
+// ============================================
+// DASHBOARD DATA FETCHING
+// ============================================
+
 async function fetchJobStatusCounts() {
     const container = document.getElementById('status-counts');
     try {
@@ -352,7 +417,6 @@ async function fetchJobStatusCounts() {
         if (!response.ok) throw new Error('HTTP error');
         const counts = await response.json();
         
-        // Calculate total jobs
         const totalJobs = Object.values(counts).reduce((sum, count) => sum + count, 0);
         
         container.innerHTML = `
@@ -391,7 +455,6 @@ async function fetchScheduleData() {
     const loading = document.getElementById('schedule-loading');
     const errorMsg = document.getElementById('schedule-error');
     
-    // ✨ MODIFIED: Clear previous content and show loading
     list.innerHTML = '';
     loading.classList.remove('hidden');
     errorMsg.classList.add('hidden');
@@ -413,15 +476,9 @@ async function fetchScheduleData() {
         
         const events = data.filter(item => {
             const eventDate = new Date(item.Event_Date);  
-            
-            if (isNaN(eventDate.getTime())) {
-                console.error("Invalid date received for schedule item:", item.Event_Date);
-                return false;  
-            }
-
+            if (isNaN(eventDate.getTime())) return false;
             const eventDay = new Date(eventDate);
             eventDay.setHours(0, 0, 0, 0);
-
             return eventDay.getTime() >= now.getTime();
         });
 
@@ -446,7 +503,6 @@ async function fetchScheduleData() {
             }
         });
         
-        // Render Today's Events
         if (todayEvents.length > 0) {
             todayEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
             list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4>`;
@@ -455,7 +511,6 @@ async function fetchScheduleData() {
             list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4><p class="text-gray-500 italic ml-2">No appointments today.</p>`;
         }
         
-        // Render Upcoming Events
         if (upcomingEvents.length > 0) {
             list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 border-t pt-3 mt-4">Upcoming Schedule</h4>';
             upcomingEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
@@ -473,14 +528,11 @@ async function fetchScheduleData() {
 function createScheduleItem(item, bgColor) {
     const eventDate = new Date(item.Event_Date);
     const displayDate = eventDate.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
-    
     const timeText = item['Time_Start_End'] || 'Time N/A';
-    
     const clientName = item['Client_Name'] || 'Client N/A';
     const jobId = item['Job_ID'] || 'No Job ID';
     const location = item['Location/Address'] || 'N/A';
     const notes = item['Event_Notes'] || '';
-
     const notesHtml = notes ? `<span class="text-xs text-gray-500 mt-1 block">Notes: ${notes}</span>` : '';
     
     return `
@@ -503,7 +555,10 @@ function createScheduleItem(item, bgColor) {
     `;
 }
 
-// Job Details Modal Functions
+// ============================================
+// JOB DETAILS MODAL
+// ============================================
+
 async function showJobDetails(status) {
     const modal = document.getElementById('job-details-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -517,11 +572,7 @@ async function showJobDetails(status) {
         </div>
     `;
     
-    if (status === 'all') {
-        modalTitle.textContent = 'All Current Jobs';
-    } else {
-        modalTitle.textContent = status;
-    }
+    modalTitle.textContent = status === 'all' ? 'All Current Jobs' : status;
     
     try {
         const response = await fetch(`${WEB_APP_URL}?action=getJobsByStatus&status=${encodeURIComponent(status)}`);
@@ -593,7 +644,10 @@ function createJobCard(job) {
     `;
 }
 
-// Job Log Functions
+// ============================================
+// JOB LOG FUNCTIONS
+// ============================================
+
 async function fetchJobLog() {
     const container = document.getElementById('joblog-container');
     const refreshIcon = document.getElementById('refresh-icon');
@@ -606,7 +660,6 @@ async function fetchJobLog() {
     `;
     
     if (refreshIcon) {
-        refreshIcon.style.display = 'inline-block';
         refreshIcon.style.animation = 'spin 1s linear infinite';
     }
     
@@ -656,7 +709,7 @@ function displayJobLogTable(jobs) {
     jobs.forEach((job, index) => {
         const rowColor = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
         html += `
-            <tr class="${rowColor} hover:bg-blue-50 transition-colors" id="job-row-${job.rowIndex}">
+            <tr class="${rowColor} hover:bg-blue-50 transition-colors">
                 <td class="px-4 py-3 text-sm font-medium text-gray-900">${job.Job_ID || 'N/A'}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">${job.Client_Name || 'N/A'}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">${job.Service_Type || 'N/A'}</td>
@@ -778,7 +831,6 @@ function showEditModal(job, rowIndex) {
     `;
     
     document.getElementById('edit-job-form').addEventListener('submit', saveJobEdit);
-    
     modal.classList.remove('hidden');
 }
 
@@ -844,6 +896,7 @@ async function viewJobDetails(rowIndex) {
     }
 }
 
+// Close modal when clicking outside
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('job-details-modal');
     if (e.target === modal) {
