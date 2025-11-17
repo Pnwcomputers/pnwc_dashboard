@@ -61,6 +61,7 @@
     <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200 app-content-hidden">
         <button id="dashboard-tab" onclick="showTab('dashboard')" class="py-2 px-4 text-sm sm:text-lg font-medium text-blue-700 border-b-4 border-blue-700">Dashboard</button>
         <button id="checkin-tab" onclick="showTab('checkin')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">New Job Check-In</button>
+        <button id="forms-tab" onclick="showTab('forms')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Form Entries</button>
         <button id="joblog-tab" onclick="showTab('joblog')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Job Log</button>
     </nav>
 
@@ -177,6 +178,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- Form Entries View -->
+        <div id="forms-view" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">Incoming Form Entries</h2>
+                    <p class="text-gray-600 text-sm">Review public submissions and convert them into actionable job tickets.</p>
+                </div>
+                <button onclick="loadFormEntries(true)" class="self-start md:self-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
+                    <span id="forms-refresh-icon">🔄</span>
+                    <span>Refresh Form Data</span>
+                </button>
+            </div>
+
+            <div class="space-y-8">
+                <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-blue-800">Pacific Northwest Check-In Form</h3>
+                            <p class="text-sm text-gray-500">Website check-in submissions awaiting review.</p>
+                        </div>
+                        <span id="checkin-form-status" class="text-sm text-gray-500">Load the latest entries</span>
+                    </div>
+                    <div id="checkin-form-entries" class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg text-gray-500 text-sm">No data loaded yet.</div>
+                    </div>
+                </section>
+
+                <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-indigo-800">Intake Questions Form (Responses)</h3>
+                            <p class="text-sm text-gray-500">Detailed intake answers from prospective jobs.</p>
+                        </div>
+                        <span id="intake-form-status" class="text-sm text-gray-500">Load the latest entries</span>
+                    </div>
+                    <div id="intake-form-entries" class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg text-gray-500 text-sm">No data loaded yet.</div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="text-xs text-gray-500 italic">Tip: Use “Create Job Entry” to pre-fill the new job check-in form with data from a submission.</div>
+        </div>
     </div>
 </div>
 
@@ -201,6 +246,22 @@
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxfWSe74CMs1Bc2k1dS5saY3LFaPZ8aW-V_lt8N7WGQBkS3Aim3yj_rJbBN2xXlYXPCAg/exec';
 const MASTER_PASSWORD = 'Numbers11!';
 const SESSION_KEY = 'pnw_computers_logged_in';
+const FORM_SECTIONS = {
+    checkin: {
+        containerId: 'checkin-form-entries',
+        statusId: 'checkin-form-status',
+        label: 'Pacific Northwest Check-In Form'
+    },
+    intake: {
+        containerId: 'intake-form-entries',
+        statusId: 'intake-form-status',
+        label: 'Intake Questions Form (Responses)'
+    }
+};
+const formEntriesCache = {
+    checkin: null,
+    intake: null
+};
 
 // ============================================
 // SESSION MANAGEMENT
@@ -311,7 +372,7 @@ function generateDateString() {
 
 document.addEventListener('DOMContentLoaded', () => {
     checkSession();
-    
+
     document.getElementById('login-form').addEventListener('submit', attemptLogin);
     
     // Auto-generate Job ID preview
@@ -381,6 +442,251 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
+// FORM ENTRY REVIEW
+// ============================================
+
+async function loadFormEntries(forceRefresh = false) {
+    const icon = document.getElementById('forms-refresh-icon');
+    if (icon) {
+        icon.classList.add('rotate-icon');
+    }
+
+    const fetchPromises = Object.keys(FORM_SECTIONS).map(async (formType) => {
+        const config = FORM_SECTIONS[formType];
+        if (!config) return;
+
+        if (!forceRefresh && Array.isArray(formEntriesCache[formType]) && formEntriesCache[formType].length > 0) {
+            renderFormEntries(formType, formEntriesCache[formType]);
+            updateFormStatus(formType, `Showing ${formEntriesCache[formType].length} entr${formEntriesCache[formType].length === 1 ? 'y' : 'ies'}.`);
+            return;
+        }
+
+        updateFormStatus(formType, 'Loading latest entries...');
+
+        try {
+            const entries = await fetchFormEntries(formType);
+            formEntriesCache[formType] = sortEntriesByTimestamp(entries);
+            renderFormEntries(formType, formEntriesCache[formType]);
+            updateFormStatus(formType, `Loaded ${formEntriesCache[formType].length} entr${formEntriesCache[formType].length === 1 ? 'y' : 'ies'}.`);
+        } catch (error) {
+            console.error(`Error loading ${formType} entries:`, error);
+            updateFormStatus(formType, `Error: ${error.message}`, true);
+            const container = document.getElementById(config.containerId);
+            if (container) {
+                container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 rounded-lg">Unable to load entries. ${escapeHtml(error.message)}</div>`;
+            }
+        }
+    });
+
+    await Promise.all(fetchPromises);
+
+    if (icon) {
+        setTimeout(() => icon.classList.remove('rotate-icon'), 600);
+    }
+}
+
+async function fetchFormEntries(formType) {
+    const response = await fetch(`${WEB_APP_URL}?action=getFormEntries&formType=${encodeURIComponent(formType)}`);
+    if (!response.ok) {
+        throw new Error('Unable to reach server');
+    }
+    const result = await response.json();
+    if (result.result !== 'success') {
+        throw new Error(result.message || 'Unknown error fetching entries');
+    }
+    return result.entries || [];
+}
+
+function renderFormEntries(formType, entries) {
+    const config = FORM_SECTIONS[formType];
+    if (!config) return;
+    const container = document.getElementById(config.containerId);
+    if (!container) return;
+
+    if (!entries || entries.length === 0) {
+        container.innerHTML = '<div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-500">No submissions found.</div>';
+        return;
+    }
+
+    const maxEntries = 25;
+    const subset = entries.slice(0, maxEntries);
+    container.innerHTML = subset.map((entry, index) => createFormEntryCard(formType, entry, index)).join('');
+
+    if (entries.length > maxEntries) {
+        container.innerHTML += `<p class="text-xs text-gray-500 text-right">Showing latest ${maxEntries} entries out of ${entries.length}.</p>`;
+    }
+}
+
+function createFormEntryCard(formType, entry, index) {
+    const name = getEntryFieldValue(entry, ['name', 'client']);
+    const email = getEntryFieldValue(entry, ['email']);
+    const phone = getEntryFieldValue(entry, ['phone']);
+    const system = getEntryFieldValue(entry, ['system', 'device', 'model', 'computer']);
+    const description = getEntryFieldValue(entry, ['issue', 'problem', 'request', 'details', 'description', 'help', 'concern', 'notes']);
+    const timestampLabel = formatEntryTimestamp(entry);
+
+    return `
+        <div class="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50">
+            <div class="flex flex-wrap justify-between items-start gap-3">
+                <div>
+                    <p class="text-sm text-gray-500">${escapeHtml(timestampLabel)}</p>
+                    <h4 class="text-lg font-semibold text-gray-800">${escapeHtml(name || 'Unnamed Contact')}</h4>
+                    <p class="text-sm text-gray-600">${escapeHtml(email || 'No email provided')} • ${escapeHtml(phone || 'No phone')}</p>
+                </div>
+                <button onclick="handleCreateJobFromEntry('${formType}', ${index})" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow">Create Job Entry</button>
+            </div>
+            <div class="mt-3 text-sm text-gray-700">
+                ${system ? `<p class="font-medium text-gray-800">System: ${escapeHtml(system)}</p>` : ''}
+                <p class="mt-1 whitespace-pre-wrap">${escapeHtml(description || 'No request/issue provided.')}</p>
+            </div>
+        </div>
+    `;
+}
+
+function updateFormStatus(formType, message, isError = false) {
+    const config = FORM_SECTIONS[formType];
+    if (!config) return;
+    const statusEl = document.getElementById(config.statusId);
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.classList.toggle('text-red-600', Boolean(isError));
+    statusEl.classList.toggle('text-gray-500', !isError);
+}
+
+function sortEntriesByTimestamp(entries) {
+    return [...entries].sort((a, b) => {
+        const aTime = getEntryTimestampValue(a);
+        const bTime = getEntryTimestampValue(b);
+        return bTime - aTime;
+    });
+}
+
+function getEntryTimestampValue(entry) {
+    const raw = getEntryFieldValue(entry, ['timestamp', 'time', 'date']);
+    if (!raw) return 0;
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+        return 0;
+    }
+    return parsed.getTime();
+}
+
+function formatEntryTimestamp(entry) {
+    const raw = getEntryFieldValue(entry, ['timestamp', 'time', 'date']);
+    if (!raw) return 'Date not recorded';
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+        return String(raw);
+    }
+    return parsed.toLocaleString();
+}
+
+function getEntryFieldValue(entry, keywords = []) {
+    if (!entry || typeof entry !== 'object') return '';
+    const normalizedKeywords = keywords.map(k => k.toLowerCase());
+    for (const key of Object.keys(entry)) {
+        const normalizedKey = key.replace(/_/g, ' ').toLowerCase();
+        if (normalizedKeywords.some(keyword => normalizedKey.includes(keyword))) {
+            const value = entry[key];
+            if (value === null || value === undefined) return '';
+            return typeof value === 'string' ? value : String(value);
+        }
+    }
+    return '';
+}
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function handleCreateJobFromEntry(formType, index) {
+    const entries = formEntriesCache[formType];
+    if (!entries || !entries[index]) {
+        alert('Unable to locate that form entry. Please refresh and try again.');
+        return;
+    }
+
+    const entry = entries[index];
+    const jobData = mapEntryToJobData(entry);
+    prefillJobForm(jobData);
+    showTab('checkin');
+    const checkinView = document.getElementById('checkin-view');
+    if (checkinView) {
+        checkinView.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    const messageBox = document.getElementById('message-box');
+    if (messageBox) {
+        const label = FORM_SECTIONS[formType]?.label || 'form entry';
+        messageBox.textContent = `Loaded data from ${label}${jobData.clientName ? ` for ${jobData.clientName}` : ''}. Please review and submit when ready.`;
+        messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+        messageBox.classList.add('bg-blue-100', 'text-blue-700');
+    }
+}
+
+function mapEntryToJobData(entry) {
+    const clientName = getEntryFieldValue(entry, ['client name', 'name']);
+    const clientEmail = getEntryFieldValue(entry, ['email']);
+    const clientPhone = getEntryFieldValue(entry, ['phone', 'contact number', 'mobile']);
+    const serviceType = getEntryFieldValue(entry, ['service type', 'service']);
+    const systemMake = getEntryFieldValue(entry, ['system', 'device', 'model', 'computer']);
+    const initialRequest = getEntryFieldValue(entry, ['issue', 'problem', 'request', 'details', 'description', 'help', 'concern', 'notes']);
+
+    return {
+        clientName,
+        clientEmail,
+        clientPhone,
+        serviceType,
+        systemMake,
+        initialRequest
+    };
+}
+
+function prefillJobForm(jobData) {
+    const clientNameInput = document.getElementById('clientName');
+    if (clientNameInput) {
+        clientNameInput.value = jobData.clientName || '';
+        clientNameInput.dispatchEvent(new Event('input'));
+    }
+
+    const clientEmailInput = document.getElementById('clientEmail');
+    if (clientEmailInput) {
+        clientEmailInput.value = jobData.clientEmail || '';
+    }
+
+    const clientPhoneInput = document.getElementById('clientPhone');
+    if (clientPhoneInput) {
+        clientPhoneInput.value = jobData.clientPhone || '';
+    }
+
+    if (jobData.serviceType) {
+        const serviceTypeSelect = document.getElementById('serviceType');
+        if (serviceTypeSelect) {
+            const hasOption = Array.from(serviceTypeSelect.options).some(option => option.value === jobData.serviceType);
+            if (hasOption) {
+                serviceTypeSelect.value = jobData.serviceType;
+            }
+        }
+    }
+
+    const systemMakeInput = document.getElementById('systemMake');
+    if (systemMakeInput) {
+        systemMakeInput.value = jobData.systemMake || '';
+    }
+
+    const initialRequestInput = document.getElementById('initialRequest');
+    if (initialRequestInput) {
+        initialRequestInput.value = jobData.initialRequest || '';
+    }
+}
+
+// ============================================
 // TAB NAVIGATION
 // ============================================
 
@@ -399,6 +705,10 @@ function showTab(tabName) {
     } else if (tabName === 'checkin') {
         document.getElementById('checkin-view').classList.remove('hidden');
         document.getElementById('checkin-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+    } else if (tabName === 'forms') {
+        document.getElementById('forms-view').classList.remove('hidden');
+        document.getElementById('forms-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+        loadFormEntries();
     } else if (tabName === 'joblog') {
         document.getElementById('joblog-view').classList.remove('hidden');
         document.getElementById('joblog-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
