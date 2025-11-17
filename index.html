@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PNW Computers Job Tracker</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind-lite.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .cursor-pointer { cursor: pointer; }
-        .app-content-hidden { display: none; }
         .rotate-icon { animation: spin 0.5s linear; }
     </style>
 </head>
@@ -24,23 +23,8 @@
         <p class="text-gray-600">Daily Dashboard & Job Check-In System</p>
     </header>
 
-    <!-- Login View -->
-    <div id="login-view" class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mt-12">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Staff Login</h2>
-        <form id="login-form" class="space-y-6">
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
-            </div>
-            <p id="login-message" class="text-sm text-red-600 text-center hidden"></p>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
-                Log In
-            </button>
-        </form>
-    </div>
-    
-    <!-- Header Bar with Refresh and Logout -->
-    <div id="app-header" class="w-full max-w-6xl mx-auto mb-4 flex justify-between items-center app-content-hidden">
+    <!-- Header Bar with Refresh Controls -->
+    <div id="app-header" class="w-full max-w-6xl mx-auto mb-4 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <button onclick="refreshDashboard(true)" id="sync-calendar-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
                 <span>📅</span>
@@ -52,13 +36,10 @@
             </button>
             <span id="last-refresh" class="text-sm text-gray-600 italic"></span>
         </div>
-        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow">
-            Logout
-        </button>
     </div>
-    
+
     <!-- Navigation Tabs -->
-    <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200 app-content-hidden">
+    <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200">
         <button id="dashboard-tab" onclick="showTab('dashboard')" class="py-2 px-4 text-sm sm:text-lg font-medium text-blue-700 border-b-4 border-blue-700">Dashboard</button>
         <button id="checkin-tab" onclick="showTab('checkin')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">New Job Check-In</button>
         <button id="forms-tab" onclick="showTab('forms')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Form Entries</button>
@@ -66,7 +47,7 @@
     </nav>
 
     <!-- Main Content -->
-    <div id="main-app-content" class="max-w-6xl mx-auto w-full app-content-hidden">
+    <div id="main-app-content" class="max-w-6xl mx-auto w-full">
         
         <!-- Dashboard View -->
         <div id="dashboard-view" class="tab-content space-y-8">
@@ -244,8 +225,6 @@
 <script>
 // ⚙️ CONFIGURATION - UPDATE THIS WITH YOUR WEB APP URL
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyfKLY8bTrUrwPxCDyr30BgIkPrSjz14ySOulWejU6kwxzfjNl0pegaSI_eNapi6dQh9g/exec';
-const MASTER_PASSWORD = 'Numbers11!';
-const SESSION_KEY = 'pnw_computers_logged_in';
 const FORM_SECTIONS = {
     checkin: {
         containerId: 'checkin-form-entries',
@@ -262,49 +241,6 @@ const formEntriesCache = {
     checkin: null,
     intake: null
 };
-
-// ============================================
-// SESSION MANAGEMENT
-// ============================================
-
-function checkSession() {
-    const isLoggedIn = sessionStorage.getItem(SESSION_KEY);
-    if (isLoggedIn === 'true') {
-        showApp();
-    }
-}
-
-function attemptLogin(e) {
-    e.preventDefault();
-    const passwordInput = document.getElementById('password');
-    const loginMessage = document.getElementById('login-message');
-    const enteredPassword = passwordInput.value;
-
-    loginMessage.classList.add('hidden');
-
-    if (enteredPassword === MASTER_PASSWORD) {
-        sessionStorage.setItem(SESSION_KEY, 'true');
-        showApp();
-    } else {
-        loginMessage.textContent = 'Incorrect password. Please try again.';
-        loginMessage.classList.remove('hidden');
-        passwordInput.value = '';
-        passwordInput.focus();
-    }
-}
-
-function logout() {
-    sessionStorage.removeItem(SESSION_KEY);
-    location.reload();
-}
-
-function showApp() {
-    document.getElementById('login-view').classList.add('hidden');
-    document.getElementById('app-header').classList.remove('app-content-hidden');
-    document.getElementById('app-nav').classList.remove('app-content-hidden');
-    document.getElementById('main-app-content').classList.remove('app-content-hidden');
-    showTab('dashboard');
-}
 
 // ============================================
 // DASHBOARD REFRESH
@@ -371,10 +307,9 @@ function generateDateString() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkSession();
+    showTab('dashboard');
+    refreshDashboard();
 
-    document.getElementById('login-form').addEventListener('submit', attemptLogin);
-    
     // Auto-generate Job ID preview
     document.getElementById('clientName').addEventListener('input', function(e) {
         const name = e.target.value.trim();
@@ -490,11 +425,23 @@ async function fetchFormEntries(formType) {
     if (!response.ok) {
         throw new Error('Unable to reach server');
     }
+
     const result = await response.json();
-    if (result.result !== 'success') {
-        throw new Error(result.message || 'Unknown error fetching entries');
+
+    if (Array.isArray(result)) {
+        return result;
     }
-    return result.entries || [];
+
+    if (result && typeof result === 'object') {
+        if (result.result && result.result !== 'success') {
+            throw new Error(result.message || 'Unknown error fetching entries');
+        }
+        if (Array.isArray(result.entries)) {
+            return result.entries;
+        }
+    }
+
+    throw new Error('Unexpected response format from server');
 }
 
 function renderFormEntries(formType, entries) {
