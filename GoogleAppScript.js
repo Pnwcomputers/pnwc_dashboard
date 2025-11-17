@@ -2,10 +2,12 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 const MASTER_LOG_SHEET_NAME = 'Master Job Log';
 const SCHEDULE_SHEET_NAME = 'Onsite Schedule';
 const CALENDAR_NAME = 'Pacific NW Computers';
+
+// External form spreadsheets
 const CHECKIN_FORM_SPREADSHEET_ID = '1bm_3Gkngqeq3FoMNRfYegiWC6PEEHQn50SYONFCwz1o';
-const CHECKIN_FORM_SHEET_NAME = 'Pacific Northwest Check-In Form';
+const CHECKIN_FORM_SHEET_NAME = 'Pacific Northwest Check-In Form'; // <-- tab name
 const INTAKE_FORM_SPREADSHEET_ID = '1e6jf-ZqfjZqc1WWYcKq6eae1LPTglPBM8SbniJTo9FI';
-const INTAKE_FORM_SHEET_NAME = 'Intake Questions Form (Responses)';
+const INTAKE_FORM_SHEET_NAME = 'Intake Questions Form (Responses)'; // <-- tab name
 
 // ============================================
 // EMAIL FUNCTIONS (NEW)
@@ -199,8 +201,7 @@ Dear ${jobData.Client_Name},
 
 There's an update on your service request Job #${jobData.Job_ID}.
 
-${changes.statusChanged ? `STATUS UPDATED: ${jobData.Status}\n` : ''}
-${changes.notesChanged && jobData.Job_Notes ? `\nNEW NOTES:\n${jobData.Job_Notes}\n` : ''}
+${changes.statusChanged ? `STATUS UPDATED: ${jobData.Status}\n` : ''}${changes.notesChanged && jobData.Job_Notes ? `\nNEW NOTES:\n${jobData.Job_Notes}\n` : ''}
 
 CURRENT JOB INFORMATION
 -----------------------
@@ -256,11 +257,9 @@ function doPost(e) {
   // Handle form data sent via URLSearchParams
   let data;
   try {
-    // The data comes in as e.parameter.data (already a string)
     if (e.parameter && e.parameter.data) {
       data = JSON.parse(e.parameter.data);  // Parse the JSON string
     } else if (e.postData && e.postData.contents) {
-      // Fallback for old JSON format
       data = JSON.parse(e.postData.contents);
     } else {
       throw new Error('No data received');
@@ -292,7 +291,6 @@ function doPost(e) {
     sheet.appendRow(rowData);
     SpreadsheetApp.flush();
     
-    // ✨ NEW: Send confirmation email
     if (data.clientEmail) {
       sendConfirmationEmail(data);
     }
@@ -305,31 +303,33 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  const action = e.parameter.action;
-  const status = e.parameter.status;
-  const sheetParam = e.parameter.sheet;
-  const rowIndex = e.parameter.rowIndex;
+  const action = e && e.parameter ? e.parameter.action : null;
+  const status = e && e.parameter ? e.parameter.status : null;
+  const sheetParam = e && e.parameter ? e.parameter.sheet : null;
+  const rowIndex = e && e.parameter ? e.parameter.rowIndex : null;
 
-  // Handle get all jobs request (for Job Log view)
+  // Job log data
   if (action === 'getAllJobs') {
     return getAllJobs();
   }
 
+  // Incoming form entries (checkin / intake)
   if (action === 'getFormEntries') {
-    return getFormEntries(e.parameter.formType);
+    const formType = e.parameter.formType || 'checkin'; // 'checkin' | 'intake' | 'all'
+    return getFormEntries(formType);
   }
   
-  // Handle get single job by row index (for editing)
+  // Single job for editing
   if (action === 'getJobByRow') {
-    return getJobByRow(rowIndex);
+    return getJobByRow(Number(rowIndex));
   }
   
-  // Handle job details request by status (for clickable status sections)
+  // Jobs by status
   if (action === 'getJobsByStatus') {
     return getJobsByStatus(status);
   }
   
-  // Handle status counts request (for dashboard status counts)
+  // Status counts for dashboard
   if (sheetParam === 'MasterLogStatus') {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
@@ -337,7 +337,7 @@ function doGet(e) {
     return createJsonResponse(statusCounts);
   }
   
-  // Default: Return schedule data (for dashboard schedule section)
+  // Default: schedule data (dashboard schedule section)
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scheduleSheet = ss.getSheetByName(SCHEDULE_SHEET_NAME);
   const scheduleData = getSheetDataAsJson(scheduleSheet);
@@ -345,8 +345,8 @@ function doGet(e) {
 }
 
 function getJobsByStatus(status) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Master Job Log');
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   
   const headers = data[0];
@@ -401,29 +401,54 @@ function getSheetDataAsJson(sheet) {
   return data;
 }
 
+/**
+ * Get form entries from Check-In or Intake forms
+ * formType: 'checkin' | 'intake' | 'all'
+ */
 function getFormEntries(formType) {
   try {
-    let spreadsheetId = CHECKIN_FORM_SPREADSHEET_ID;
-    let sheetName = CHECKIN_FORM_SHEET_NAME;
+    const results = [];
 
-    if (formType === 'intake') {
-      spreadsheetId = INTAKE_FORM_SPREADSHEET_ID;
-      sheetName = INTAKE_FORM_SHEET_NAME;
-    }
+    // Helper to load one form
+    const loadForm = function(spreadsheetId, sheetName, sourceLabel) {
+      const formSpreadsheet = SpreadsheetApp.openById(spreadsheetId);
+      let sheet = formSpreadsheet.getSheetByName(sheetName);
 
-    const formSpreadsheet = SpreadsheetApp.openById(spreadsheetId);
-    let sheet = formSpreadsheet.getSheetByName(sheetName);
-    if (!sheet) {
-      const sheets = formSpreadsheet.getSheets();
-      if (!sheets || sheets.length === 0) {
-        throw new Error('Form sheet not found');
+      // Fallback: try to find a "Form Responses" tab or use first sheet
+      if (!sheet) {
+        const sheets = formSpreadsheet.getSheets();
+        if (!sheets || sheets.length === 0) {
+          throw new Error('Form sheet not found in spreadsheet: ' + spreadsheetId);
+        }
+        const responsesSheet = sheets.find(sh => sh.getName().indexOf('Form Responses') !== -1);
+        sheet = responsesSheet || sheets[0];
       }
-      sheet = sheets[0];
+
+      const entries = getSheetDataAsJson(sheet);
+      // Tag with source so UI can distinguish
+      entries.forEach(e => e._source = sourceLabel);
+      return entries;
+    };
+
+    if (formType === 'checkin' || formType === 'all') {
+      results.push.apply(results, loadForm(
+        CHECKIN_FORM_SPREADSHEET_ID,
+        CHECKIN_FORM_SHEET_NAME,
+        'checkin'
+      ));
     }
 
-    const entries = getSheetDataAsJson(sheet);
-    return createJsonResponse({ result: 'success', entries });
+    if (formType === 'intake' || formType === 'all') {
+      results.push.apply(results, loadForm(
+        INTAKE_FORM_SPREADSHEET_ID,
+        INTAKE_FORM_SHEET_NAME,
+        'intake'
+      ));
+    }
+
+    return createJsonResponse({ result: 'success', entries: results });
   } catch (error) {
+    Logger.log('getFormEntries error: ' + error.message);
     return createJsonResponse({ result: 'error', message: error.message });
   }
 }
@@ -461,9 +486,7 @@ function getMasterLogStatusCounts(sheet) {
   
   for (let i = 1; i < values.length; i++) {
     const isCompleted = completedColIndex !== -1 && values[i][completedColIndex];
-    if (isCompleted) {
-      continue;
-    }
+    if (isCompleted) continue;
 
     const status = values[i][statusColIndex];
     if (counts.hasOwnProperty(status)) {
@@ -502,7 +525,7 @@ function syncOnsiteSchedule() {
     if (!event.isAllDayEvent()) {
       const eventTitle = event.getTitle();
       const eventDesc = event.getDescription();
-      const jobIdMatch = eventTitle.match(/WO-\d{4}/) || eventDesc.match(/WO-\d{4}/);
+      const jobIdMatch = eventTitle.match(/WO-\d{4}/) || (eventDesc && eventDesc.match(/WO-\d{4}/));
       const jobId = jobIdMatch ? jobIdMatch[0] : '';
       
       const newRow = [
@@ -671,14 +694,12 @@ function updateJob(e) {
     const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     
-    // ✨ NEW: Get old values to compare changes
     const oldRow = sheet.getRange(rowIndex, 1, 1, sheet.getLastColumn()).getValues()[0];
     const statusCol = headers.indexOf('Status');
     const notesCol = headers.indexOf('Job Notes');
     const oldStatus = oldRow[statusCol];
     const oldNotes = oldRow[notesCol];
     
-    // Find column indices
     const serviceTypeCol = headers.indexOf('Service Type') + 1;
     const clientNameCol = headers.indexOf('Client Name') + 1;
     const clientEmailCol = headers.indexOf('Client Email') + 1;
@@ -689,7 +710,6 @@ function updateJob(e) {
     const requestCol = headers.indexOf('Initial Request') + 1;
     const notesColNum = headers.indexOf('Job Notes') + 1;
     
-    // Update the cells
     if (clientNameCol > 0) sheet.getRange(rowIndex, clientNameCol).setValue(data.Client_Name || '');
     if (clientEmailCol > 0) sheet.getRange(rowIndex, clientEmailCol).setValue(data.Client_Email || '');
     if (clientPhoneCol > 0) sheet.getRange(rowIndex, clientPhoneCol).setValue(data.Client_Phone || '');
@@ -702,7 +722,6 @@ function updateJob(e) {
     
     SpreadsheetApp.flush();
     
-    // ✨ NEW: Check if status or notes changed and send email
     const statusChanged = oldStatus !== data.Status;
     const notesChanged = oldNotes !== data.Job_Notes;
     
