@@ -240,6 +240,11 @@ function doPost(e) {
     return updateJob(e);
   }
 
+  // Handle completion actions
+  if (e.parameter && e.parameter.action === 'markJobCompleted') {
+    return markJobCompleted(e);
+  }
+
   if (!sheet) {
     return createJsonResponse({ result: 'error', message: 'Sheet not found' });
   }
@@ -338,13 +343,19 @@ function getJobsByStatus(status) {
   
   const headers = data[0];
   const jobs = [];
-  
+
   const statusColIndex = headers.indexOf('Status');
-  
+  const completedColIndex = headers.indexOf('Date Completed');
+
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     const jobStatus = row[statusColIndex];
-    
+    const isCompleted = completedColIndex !== -1 && row[completedColIndex];
+
+    if (isCompleted) {
+      continue;
+    }
+
     if (status === 'all' || jobStatus === status) {
       const job = {
         Job_ID: row[headers.indexOf('Job ID')],
@@ -399,6 +410,7 @@ function getMasterLogStatusCounts(sheet) {
   
   const headers = values[0];
   const statusColIndex = headers.indexOf('Status');
+  const completedColIndex = headers.indexOf('Date Completed');
   
   if (statusColIndex === -1) {
     throw new Error('Status column not found in sheet');
@@ -413,6 +425,11 @@ function getMasterLogStatusCounts(sheet) {
   };
   
   for (let i = 1; i < values.length; i++) {
+    const isCompleted = completedColIndex !== -1 && values[i][completedColIndex];
+    if (isCompleted) {
+      continue;
+    }
+
     const status = values[i][statusColIndex];
     if (counts.hasOwnProperty(status)) {
       counts[status]++;
@@ -664,6 +681,53 @@ function updateJob(e) {
     return createJsonResponse({ result: 'success', message: 'Job updated successfully!' });
   } catch (error) {
     Logger.log('Update error: ' + error.message);
+    return createJsonResponse({ result: 'error', message: error.message });
+  }
+}
+
+function markJobCompleted(e) {
+  try {
+    const rowIndex = parseInt(e.parameter.rowIndex, 10);
+    if (!rowIndex || rowIndex < 2) {
+      return createJsonResponse({ result: 'error', message: 'Invalid row index' });
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
+
+    if (!sheet) {
+      return createJsonResponse({ result: 'error', message: 'Sheet not found' });
+    }
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const statusCol = headers.indexOf('Status') + 1;
+    const resolutionCol = headers.indexOf('Final Resolution') + 1;
+    const completedCol = headers.indexOf('Date Completed') + 1;
+
+    const completionDate = new Date();
+    const resolution = e.parameter && e.parameter.resolution ? e.parameter.resolution : '';
+
+    if (statusCol > 0) {
+      sheet.getRange(rowIndex, statusCol).setValue('Completed');
+    }
+
+    if (completedCol > 0) {
+      sheet.getRange(rowIndex, completedCol).setValue(completionDate);
+    }
+
+    if (resolution && resolutionCol > 0) {
+      sheet.getRange(rowIndex, resolutionCol).setValue(resolution);
+    }
+
+    SpreadsheetApp.flush();
+
+    return createJsonResponse({
+      result: 'success',
+      message: 'Job marked as completed.',
+      completionDate: formatDate(completionDate)
+    });
+  } catch (error) {
+    Logger.log('Completion error: ' + error.message);
     return createJsonResponse({ result: 'error', message: error.message });
   }
 }
