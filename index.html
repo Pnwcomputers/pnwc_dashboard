@@ -5,237 +5,527 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PNW Computers Job Tracker</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.4/dist/tailwind.min.css">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .cursor-pointer { cursor: pointer; }
-        .app-content-hidden { display: none; }
-        .rotate-icon { animation: spin 0.5s linear; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top, #e0f2fe 0, #e5e7eb 45%, #f3f4f6 100%);
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .app-content-hidden {
+            display: none;
+        }
+
+        /* One-off rotation for refresh icons */
+        .rotate-icon {
+            animation: spin 0.5s linear;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen text-gray-900">
 
 <div id="app" class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
-    <header class="text-center mb-8 w-full">
-        <h1 class="text-4xl font-extrabold text-blue-900 mb-2">Pacific NW Computers Job Tracker</h1>
-        <p class="text-gray-600">Daily Dashboard & Job Check-In System</p>
-    </header>
-
-    <!-- Login View -->
-    <div id="login-view" class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border border-gray-200 mt-12">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Staff Login</h2>
-        <form id="login-form" class="space-y-6">
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
-            </div>
-            <p id="login-message" class="text-sm text-red-600 text-center hidden"></p>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
-                Log In
-            </button>
-        </form>
-    </div>
-    
-    <!-- Header Bar with Refresh and Logout -->
-    <div id="app-header" class="w-full max-w-6xl mx-auto mb-4 flex justify-between items-center app-content-hidden">
-        <div class="flex items-center space-x-3">
-            <button onclick="refreshDashboard(true)" id="sync-calendar-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
-                <span>📅</span>
-                <span>Sync Calendar</span>
-            </button>
-            <button onclick="refreshDashboard(false)" id="refresh-dashboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
-                <span id="refresh-dashboard-icon">🔄</span>
-                <span>Refresh Data</span>
-            </button>
-            <span id="last-refresh" class="text-sm text-gray-600 italic"></span>
-        </div>
-        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow">
-            Logout
-        </button>
-    </div>
-    
-    <!-- Navigation Tabs -->
-    <nav id="app-nav" class="flex justify-center space-x-2 sm:space-x-4 mb-8 border-b-2 border-gray-200 app-content-hidden">
-        <button id="dashboard-tab" onclick="showTab('dashboard')" class="py-2 px-4 text-sm sm:text-lg font-medium text-blue-700 border-b-4 border-blue-700">Dashboard</button>
-        <button id="checkin-tab" onclick="showTab('checkin')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">New Job Check-In</button>
-        <button id="forms-tab" onclick="showTab('forms')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Form Entries</button>
-        <button id="joblog-tab" onclick="showTab('joblog')" class="py-2 px-4 text-sm sm:text-lg font-medium text-gray-500 hover:text-blue-700">Job Log</button>
-    </nav>
-
-    <!-- Main Content -->
-    <div id="main-app-content" class="max-w-6xl mx-auto w-full app-content-hidden">
-        
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="tab-content space-y-8">
-            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">Today's Focus & Job Status</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-indigo-100 h-fit">
-                    <h3 class="text-xl font-semibold text-indigo-800 mb-4">Shop Job Status Counts</h3>
-                    <div id="status-counts" class="space-y-3">
-                        <p class="text-gray-500 italic flex items-center"><span class="spinner mr-2"></span> Loading...</p>
-                    </div>
+    <div class="w-full max-w-6xl mx-auto">
+        <!-- Top Brand Header -->
+        <header class="mb-6">
+            <div class="bg-gradient-to-r from-blue-900 via-sky-800 to-indigo-800 text-white rounded-2xl shadow-xl px-6 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                        Pacific NW Computers
+                    </h1>
+                    <p class="text-sm sm:text-base text-blue-100 mt-1">
+                        Job Tracker • Daily Dashboard & Job Check-In System
+                    </p>
                 </div>
-                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-                    <h3 class="text-xl font-semibold text-blue-800 mb-4">Onsite Schedule & Upcoming Tasks</h3>
-                    <div id="schedule-list" class="space-y-3">
-                        <p id="schedule-loading" class="text-gray-500 italic flex items-center"><span class="spinner mr-2"></span> Loading...</p>
-                        <p id="schedule-error" class="text-red-500 font-semibold hidden">Error loading schedule.</p>
-                    </div>
+                <div class="flex flex-col items-start sm:items-end text-xs sm:text-sm text-blue-100">
+                    <span class="font-semibold uppercase tracking-wide">Internal Staff Portal</span>
+                    <span class="opacity-80">For in-shop, onsite, and remote job management</span>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Check-In View -->
-        <div id="checkin-view" class="tab-content hidden">
-            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-4">New Job Check-In Form</h2>
-            <div id="message-box" class="hidden p-4 mb-4 rounded-xl text-center font-semibold"></div>
-            <form id="job-checkin-form" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 space-y-6">
-                <fieldset class="border border-gray-300 p-4 rounded-lg">
-                    <legend class="text-lg font-semibold text-gray-700 px-2">Client Information</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="jobId" class="block text-sm font-medium text-gray-700">Job ID (Auto-Generated)</label>
-                            <input type="text" id="jobId" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-gray-100 text-gray-600 font-mono" placeholder="Will be generated automatically...">
-                            <p class="text-xs text-gray-500 mt-1">Job ID will be created based on client name and date</p>
-                        </div>
-                        <div>
-                            <label for="clientName" class="block text-sm font-medium text-gray-700">Client Name *</label>
-                            <input type="text" id="clientName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                        </div>
-                        <div>
-                            <label for="clientEmail" class="block text-sm font-medium text-gray-700">Client Email *</label>
-                            <input type="email" id="clientEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                        </div>
-                        <div>
-                            <label for="clientPhone" class="block text-sm font-medium text-gray-700">Client Phone</label>
-                            <input type="tel" id="clientPhone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset class="border border-gray-300 p-4 rounded-lg">
-                    <legend class="text-lg font-semibold text-gray-700 px-2">Service Details</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="serviceType" class="block text-sm font-medium text-gray-700">Service Type</label>
-                            <select id="serviceType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
-                                <option value="">Select Type</option>
-                                <option value="In-Shop">In-Shop</option>
-                                <option value="Onsite">Onsite</option>
-                                <option value="Remote">Remote</option>
-                                <option value="Pick-up/Delivery">Pick-up/Delivery</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="dueDate" class="block text-sm font-medium text-gray-700">Due Date</label>
-                            <input type="date" id="dueDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                        </div>
-                        <div>
-                            <label for="currentStatus" class="block text-sm font-medium text-gray-700">Initial Status</label>
-                            <select id="currentStatus" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border bg-white">
-                                <option value="1. Checked In: Diagnostics">1. Checked In: Diagnostics</option>
-                                <option value="2. Awaiting Customer Approval">2. Awaiting Customer Approval</option>
-                                <option value="3. Awaiting Parts (Vendor Side)">3. Awaiting Parts (Vendor Side)</option>
-                                <option value="4. In Progress: Repair/Install">4. In Progress: Repair/Install</option>
-                                <option value="5. Ready for Pickup/Delivery">5. Ready for Pickup/Delivery</option>
-                            </select>
-                        </div>
-                    </div>
-                </fieldset>
-                <fieldset class="border border-gray-300 p-4 rounded-lg">
-                    <legend class="text-lg font-semibold text-gray-700 px-2">System Details</legend>
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label for="systemMake" class="block text-sm font-medium text-gray-700">System Make & Model</label>
-                            <input type="text" id="systemMake" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                        </div>
-                        <div>
-                            <label for="initialRequest" class="block text-sm font-medium text-gray-700">Initial Request</label>
-                            <textarea id="initialRequest" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></textarea>
-                        </div>
-                    </div>
-                </fieldset>
-                <div class="text-right">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Submit Job Check-In</button>
+        <!-- Login View -->
+        <div id="login-view" class="w-full max-w-md mx-auto bg-white/90 backdrop-blur rounded-2xl shadow-2xl border border-slate-200 mt-10 p-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-1 text-center">Staff Login</h2>
+            <p class="text-center text-sm text-slate-500 mb-6">
+                Secure access to the PNWC job dashboard and intake tools.
+            </p>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        autocomplete="current-password"
+                        required
+                        class="mt-1 block w-full rounded-md border border-slate-300 bg-slate-50 shadow-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter staff password"
+                    >
                 </div>
+                <p id="login-message" class="text-sm text-red-600 text-center hidden"></p>
+                <button
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-colors"
+                >
+                    Log In
+                </button>
+                <p class="text-xs text-center text-slate-400 mt-2">
+                    Access is restricted to Pacific NW Computers staff and authorized users.
+                </p>
             </form>
         </div>
 
-        <!-- Job Log View -->
-        <div id="joblog-view" class="tab-content hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">Master Job Log</h2>
-                <button onclick="fetchJobLog()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow">
-                    <span id="refresh-icon">🔄</span> Refresh
-                </button>
-            </div>
-            <div id="joblog-container" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="p-8 text-center">
-                    <span class="spinner mr-2 inline-block"></span>
-                    <span class="text-gray-500">Loading jobs...</span>
+        <!-- App Header Bar -->
+        <div
+            id="app-header"
+            class="w-full mt-6 mb-3 app-content-hidden"
+        >
+            <div class="bg-white/90 backdrop-blur border border-slate-200 shadow-md rounded-2xl px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-3">
+                    <button
+                        onclick="refreshDashboard(true)"
+                        id="sync-calendar-btn"
+                        class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2 text-sm"
+                    >
+                        <span>📅</span>
+                        <span>Sync Calendar</span>
+                    </button>
+                    <button
+                        onclick="refreshDashboard(false)"
+                        id="refresh-dashboard-btn"
+                        class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2 text-sm"
+                    >
+                        <span id="refresh-dashboard-icon">🔄</span>
+                        <span>Refresh Data</span>
+                    </button>
+                    <span
+                        id="last-refresh"
+                        class="text-xs sm:text-sm text-slate-500 italic"
+                    ></span>
                 </div>
+                <button
+                    onclick="logout()"
+                    class="self-start sm:self-auto bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-2 px-4 rounded-lg shadow text-sm"
+                >
+                    Logout
+                </button>
             </div>
         </div>
 
-        <!-- Form Entries View -->
-        <div id="forms-view" class="tab-content hidden space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">Incoming Form Entries</h2>
-                    <p class="text-gray-600 text-sm">Review public submissions and convert them into actionable job tickets.</p>
-                </div>
-                <button onclick="loadFormEntries(true)" class="self-start md:self-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2">
-                    <span id="forms-refresh-icon">🔄</span>
-                    <span>Refresh Form Data</span>
+        <!-- Navigation Tabs -->
+        <nav
+            id="app-nav"
+            class="app-content-hidden mb-6 border-b border-slate-200 flex justify-center"
+        >
+            <div class="flex space-x-1 sm:space-x-4">
+                <button
+                    id="dashboard-tab"
+                    onclick="showTab('dashboard')"
+                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-blue-700 text-blue-700"
+                >
+                    Dashboard
+                </button>
+                <button
+                    id="checkin-tab"
+                    onclick="showTab('checkin')"
+                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
+                >
+                    New Job Check-In
+                </button>
+                <button
+                    id="forms-tab"
+                    onclick="showTab('forms')"
+                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
+                >
+                    Form Entries
+                </button>
+                <button
+                    id="joblog-tab"
+                    onclick="showTab('joblog')"
+                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
+                >
+                    Job Log
                 </button>
             </div>
+        </nav>
 
-            <div class="space-y-8">
-                <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-                        <div>
-                            <h3 class="text-xl font-semibold text-blue-800">Pacific Northwest Check-In Form</h3>
-                            <p class="text-sm text-gray-500">Website check-in submissions awaiting review.</p>
+        <!-- Main Content -->
+        <main
+            id="main-app-content"
+            class="max-w-6xl mx-auto w-full app-content-hidden"
+        >
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">
+                            Today’s Focus & Job Status
+                        </h2>
+                        <p class="text-sm text-slate-500">
+                            Quick overview of in-shop work and onsite schedule.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Status counts -->
+                    <div class="lg:col-span-1 bg-white/95 backdrop-blur p-5 rounded-2xl shadow-md border border-indigo-100 h-fit">
+                        <h3 class="text-lg font-semibold text-indigo-900 mb-4">
+                            Shop Job Status Counts
+                        </h3>
+                        <div id="status-counts" class="space-y-3">
+                            <p class="text-slate-500 italic flex items-center">
+                                <span class="spinner mr-2"></span> Loading...
+                            </p>
                         </div>
-                        <span id="checkin-form-status" class="text-sm text-gray-500">Load the latest entries</span>
                     </div>
-                    <div id="checkin-form-entries" class="space-y-4">
-                        <div class="p-4 bg-gray-50 rounded-lg text-gray-500 text-sm">No data loaded yet.</div>
-                    </div>
-                </section>
 
-                <section class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-                        <div>
-                            <h3 class="text-xl font-semibold text-indigo-800">Intake Questions Form (Responses)</h3>
-                            <p class="text-sm text-gray-500">Detailed intake answers from prospective jobs.</p>
+                    <!-- Schedule -->
+                    <div class="lg:col-span-2 bg-white/95 backdrop-blur p-5 rounded-2xl shadow-md border border-blue-100">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                            Onsite Schedule & Upcoming Tasks
+                        </h3>
+                        <div id="schedule-list" class="space-y-3">
+                            <p
+                                id="schedule-loading"
+                                class="text-slate-500 italic flex items-center"
+                            >
+                                <span class="spinner mr-2"></span> Loading...
+                            </p>
+                            <p
+                                id="schedule-error"
+                                class="text-red-500 font-semibold hidden"
+                            >
+                                Error loading schedule.
+                            </p>
                         </div>
-                        <span id="intake-form-status" class="text-sm text-gray-500">Load the latest entries</span>
                     </div>
-                    <div id="intake-form-entries" class="space-y-4">
-                        <div class="p-4 bg-gray-50 rounded-lg text-gray-500 text-sm">No data loaded yet.</div>
-                    </div>
-                </section>
-            </div>
+                </div>
+            </section>
 
-            <div class="text-xs text-gray-500 italic">Tip: Use “Create Job Entry” to pre-fill the new job check-in form with data from a submission.</div>
-        </div>
+            <!-- Check-In View -->
+            <section id="checkin-view" class="tab-content hidden">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">
+                            New Job Check-In
+                        </h2>
+                        <p class="text-sm text-slate-500">
+                            Capture client and system details for in-shop, onsite, and remote work.
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    id="message-box"
+                    class="hidden p-4 mb-4 rounded-xl text-center font-semibold text-sm"
+                ></div>
+
+                <form
+                    id="job-checkin-form"
+                    class="bg-white/95 backdrop-blur p-6 rounded-2xl shadow-md border border-slate-200 space-y-6"
+                >
+                    <!-- Client info -->
+                    <fieldset class="border border-slate-200 p-4 rounded-xl bg-slate-50/60">
+                        <legend class="text-sm font-semibold text-slate-700 px-2">
+                            Client Information
+                        </legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <div class="md:col-span-2">
+                                <label for="jobId" class="block text-xs font-medium text-slate-600">
+                                    Job ID (Auto-Generated)
+                                </label>
+                                <input
+                                    type="text"
+                                    id="jobId"
+                                    readonly
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-slate-100 text-slate-600 font-mono text-sm px-3 py-2 shadow-sm"
+                                    placeholder="Will be generated automatically..."
+                                >
+                                <p class="text-xs text-slate-400 mt-1">
+                                    Job ID will be created based on client name and date.
+                                </p>
+                            </div>
+                            <div>
+                                <label for="clientName" class="block text-xs font-medium text-slate-600">
+                                    Client Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="clientName"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                >
+                            </div>
+                            <div>
+                                <label for="clientEmail" class="block text-xs font-medium text-slate-600">
+                                    Client Email *
+                                </label>
+                                <input
+                                    type="email"
+                                    id="clientEmail"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                >
+                            </div>
+                            <div>
+                                <label for="clientPhone" class="block text-xs font-medium text-slate-600">
+                                    Client Phone
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="clientPhone"
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                >
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Service details -->
+                    <fieldset class="border border-slate-200 p-4 rounded-xl bg-slate-50/60">
+                        <legend class="text-sm font-semibold text-slate-700 px-2">
+                            Service Details
+                        </legend>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                            <div>
+                                <label for="serviceType" class="block text-xs font-medium text-slate-600">
+                                    Service Type
+                                </label>
+                                <select
+                                    id="serviceType"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">Select Type</option>
+                                    <option value="In-Shop">In-Shop</option>
+                                    <option value="Onsite">Onsite</option>
+                                    <option value="Remote">Remote</option>
+                                    <option value="Pick-up/Delivery">Pick-up/Delivery</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="dueDate" class="block text-xs font-medium text-slate-600">
+                                    Due Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="dueDate"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                            </div>
+                            <div>
+                                <label for="currentStatus" class="block text-xs font-medium text-slate-600">
+                                    Initial Status
+                                </label>
+                                <select
+                                    id="currentStatus"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="1. Checked In: Diagnostics">1. Checked In: Diagnostics</option>
+                                    <option value="2. Awaiting Customer Approval">2. Awaiting Customer Approval</option>
+                                    <option value="3. Awaiting Parts (Vendor Side)">3. Awaiting Parts (Vendor Side)</option>
+                                    <option value="4. In Progress: Repair/Install">4. In Progress: Repair/Install</option>
+                                    <option value="5. Ready for Pickup/Delivery">5. Ready for Pickup/Delivery</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- System details -->
+                    <fieldset class="border border-slate-200 p-4 rounded-xl bg-slate-50/60">
+                        <legend class="text-sm font-semibold text-slate-700 px-2">
+                            System Details
+                        </legend>
+                        <div class="grid grid-cols-1 gap-4 mt-2">
+                            <div>
+                                <label for="systemMake" class="block text-xs font-medium text-slate-600">
+                                    System Make & Model
+                                </label>
+                                <input
+                                    type="text"
+                                    id="systemMake"
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                            </div>
+                            <div>
+                                <label for="initialRequest" class="block text-xs font-medium text-slate-600">
+                                    Initial Request / Issue Description
+                                </label>
+                                <textarea
+                                    id="initialRequest"
+                                    rows="4"
+                                    required
+                                    class="mt-1 block w-full rounded-md border border-slate-300 bg-white shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                ></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md text-sm"
+                        >
+                            Submit Job Check-In
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Job Log View -->
+            <section id="joblog-view" class="tab-content hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">
+                            Master Job Log
+                        </h2>
+                        <p class="text-sm text-slate-500">
+                            Active and completed jobs from the master log sheet.
+                        </p>
+                    </div>
+                    <button
+                        onclick="fetchJobLog()"
+                        class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center gap-2 text-sm self-start md:self-auto"
+                    >
+                        <span id="refresh-icon">🔄</span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+                <div
+                    id="joblog-container"
+                    class="bg-white/95 backdrop-blur rounded-2xl shadow-md border border-slate-200 overflow-hidden"
+                >
+                    <div class="p-8 text-center">
+                        <span class="spinner mr-2 inline-block"></span>
+                        <span class="text-slate-500">Loading jobs...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Entries View -->
+            <section id="forms-view" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">
+                            Incoming Form Entries
+                        </h2>
+                        <p class="text-sm text-slate-500">
+                            Review public submissions and convert them into actionable job tickets.
+                        </p>
+                    </div>
+                    <button
+                        onclick="loadFormEntries(true)"
+                        class="self-start md:self-auto bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow flex items-center space-x-2 text-sm"
+                    >
+                        <span id="forms-refresh-icon">🔄</span>
+                        <span>Refresh Form Data</span>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Check-in form entries -->
+                    <section class="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-900">
+                                    Pacific Northwest Check-In Form
+                                </h3>
+                                <p class="text-xs text-slate-500">
+                                    Website check-in submissions awaiting review.
+                                </p>
+                            </div>
+                            <span
+                                id="checkin-form-status"
+                                class="text-xs text-slate-500"
+                            >
+                                Load the latest entries
+                            </span>
+                        </div>
+                        <div id="checkin-form-entries" class="space-y-3">
+                            <div class="p-4 bg-slate-50 rounded-lg text-slate-500 text-sm">
+                                No data loaded yet.
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Intake form entries -->
+                    <section class="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-lg font-semibold text-indigo-900">
+                                    Intake Questions Form (Responses)
+                                </h3>
+                                <p class="text-xs text-slate-500">
+                                    Detailed intake answers from prospective jobs.
+                                </p>
+                            </div>
+                            <span
+                                id="intake-form-status"
+                                class="text-xs text-slate-500"
+                            >
+                                Load the latest entries
+                            </span>
+                        </div>
+                        <div id="intake-form-entries" class="space-y-3">
+                            <div class="p-4 bg-slate-50 rounded-lg text-slate-500 text-sm">
+                                No data loaded yet.
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <p class="text-xs text-slate-400 italic">
+                    Tip: Use “Create Job Entry” to pre-fill the New Job Check-In form with data from a submission.
+                </p>
+            </section>
+        </main>
     </div>
 </div>
 
 <!-- Job Details Modal -->
-<div id="job-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
-            <h2 id="modal-title" class="text-2xl font-bold">Job Details</h2>
-            <button onclick="closeJobDetails()" class="text-white hover:text-gray-200 text-3xl font-bold">&times;</button>
+<div
+    id="job-details-modal"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 flex justify-between items-center">
+            <h2 id="modal-title" class="text-xl sm:text-2xl font-bold">Job Details</h2>
+            <button
+                onclick="closeJobDetails()"
+                class="text-white hover:text-slate-200 text-3xl font-bold leading-none"
+            >&times;</button>
         </div>
-        <div id="modal-content" class="p-6 overflow-y-auto flex-1">
+        <div id="modal-content" class="p-6 overflow-y-auto flex-1 bg-slate-50">
             <div class="flex items-center justify-center py-12">
                 <span class="spinner mr-2"></span>
-                <span class="text-gray-500">Loading...</span>
+                <span class="text-slate-500">Loading...</span>
             </div>
         </div>
     </div>
@@ -313,15 +603,17 @@ function showApp() {
 async function refreshDashboard(syncCalendar = false) {
     const icon = document.getElementById('refresh-dashboard-icon');
     const buttonText = document.querySelector('#refresh-dashboard-btn span:last-child');
-    
-    icon.classList.add('rotate-icon');
-    
+
+    if (icon) {
+        icon.classList.add('rotate-icon');
+    }
+
     if (syncCalendar) {
         buttonText.textContent = 'Syncing Calendar...';
         try {
             const syncResponse = await fetch(`${WEB_APP_URL}?action=syncCalendar`);
             const syncResult = await syncResponse.json();
-            
+
             if (syncResult.result !== 'success') {
                 console.error('Calendar sync error:', syncResult.message);
             }
@@ -330,17 +622,19 @@ async function refreshDashboard(syncCalendar = false) {
         }
         buttonText.textContent = 'Refresh Data';
     }
-    
+
     fetchJobStatusCounts();
     fetchScheduleData();
-    
+
     const now = new Date();
     const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     document.getElementById('last-refresh').textContent = `Last updated: ${timeString}`;
-    
-    setTimeout(() => {
-        icon.classList.remove('rotate-icon');
-    }, 500);
+
+    if (icon) {
+        setTimeout(() => {
+            icon.classList.remove('rotate-icon');
+        }, 500);
+    }
 }
 
 // ============================================
@@ -374,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkSession();
 
     document.getElementById('login-form').addEventListener('submit', attemptLogin);
-    
+
     // Auto-generate Job ID preview
     document.getElementById('clientName').addEventListener('input', function(e) {
         const name = e.target.value.trim();
@@ -382,20 +676,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const initials = generateInitials(name);
             const dateStr = generateDateString();
             const preview = `${initials}-${dateStr}-##`;
-            document.getElementById('jobId').value = preview;
-            document.getElementById('jobId').classList.remove('text-gray-600');
-            document.getElementById('jobId').classList.add('text-blue-600', 'font-semibold');
+            const jobIdInput = document.getElementById('jobId');
+            jobIdInput.value = preview;
+            jobIdInput.classList.remove('text-slate-600');
+            jobIdInput.classList.add('text-blue-600', 'font-semibold');
         } else {
-            document.getElementById('jobId').value = '';
-            document.getElementById('jobId').classList.remove('text-blue-600', 'font-semibold');
-            document.getElementById('jobId').classList.add('text-gray-600');
+            const jobIdInput = document.getElementById('jobId');
+            jobIdInput.value = '';
+            jobIdInput.classList.remove('text-blue-600', 'font-semibold');
+            jobIdInput.classList.add('text-slate-600');
         }
     });
 
     // Job check-in form submission
     document.getElementById('job-checkin-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const jobData = {
             clientName: document.getElementById('clientName').value,
             clientEmail: document.getElementById('clientEmail').value,
@@ -406,24 +702,23 @@ document.addEventListener('DOMContentLoaded', () => {
             systemMake: document.getElementById('systemMake').value,
             initialRequest: document.getElementById('initialRequest').value
         };
-        
+
         const messageBox = document.getElementById('message-box');
         messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
         messageBox.textContent = 'Submitting...';
         messageBox.classList.add('bg-blue-100', 'text-blue-700');
-        messageBox.classList.remove('hidden');
-        
+
         try {
             const params = new URLSearchParams();
             params.append('data', JSON.stringify(jobData));
-            
+
             const response = await fetch(WEB_APP_URL, {
                 method: 'POST',
                 body: params
             });
-            
+
             const result = await response.json();
-            
+
             if (result.result === 'success') {
                 messageBox.textContent = result.message || 'Job checked in successfully!';
                 messageBox.classList.remove('bg-blue-100', 'text-blue-700');
@@ -438,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageBox.classList.remove('bg-blue-100', 'text-blue-700');
             messageBox.classList.add('bg-red-100', 'text-red-700');
         }
-    }); 
+    });
 });
 
 // ============================================
@@ -516,7 +811,7 @@ function renderFormEntries(formType, entries) {
     if (!container) return;
 
     if (!entries || entries.length === 0) {
-        container.innerHTML = '<div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-500">No submissions found.</div>';
+        container.innerHTML = '<div class="p-4 bg-slate-50 rounded-lg text-sm text-slate-500">No submissions found.</div>';
         return;
     }
 
@@ -525,7 +820,7 @@ function renderFormEntries(formType, entries) {
     container.innerHTML = subset.map((entry, index) => createFormEntryCard(formType, entry, index)).join('');
 
     if (entries.length > maxEntries) {
-        container.innerHTML += `<p class="text-xs text-gray-500 text-right">Showing latest ${maxEntries} entries out of ${entries.length}.</p>`;
+        container.innerHTML += `<p class="text-xs text-slate-500 text-right mt-1">Showing latest ${maxEntries} entries out of ${entries.length}.</p>`;
     }
 }
 
@@ -538,17 +833,22 @@ function createFormEntryCard(formType, entry, index) {
     const timestampLabel = formatEntryTimestamp(entry);
 
     return `
-        <div class="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50">
+        <div class="border border-slate-200 rounded-xl p-4 bg-gradient-to-br from-white to-slate-50 shadow-sm">
             <div class="flex flex-wrap justify-between items-start gap-3">
                 <div>
-                    <p class="text-sm text-gray-500">${escapeHtml(timestampLabel)}</p>
-                    <h4 class="text-lg font-semibold text-gray-800">${escapeHtml(name || 'Unnamed Contact')}</h4>
-                    <p class="text-sm text-gray-600">${escapeHtml(email || 'No email provided')} • ${escapeHtml(phone || 'No phone')}</p>
+                    <p class="text-xs text-slate-500">${escapeHtml(timestampLabel)}</p>
+                    <h4 class="text-base font-semibold text-slate-900">${escapeHtml(name || 'Unnamed Contact')}</h4>
+                    <p class="text-xs text-slate-600">${escapeHtml(email || 'No email provided')} • ${escapeHtml(phone || 'No phone')}</p>
                 </div>
-                <button onclick="handleCreateJobFromEntry('${formType}', ${index})" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow">Create Job Entry</button>
+                <button
+                    onclick="handleCreateJobFromEntry('${formType}', ${index})"
+                    class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-1.5 px-3 rounded-lg shadow text-xs"
+                >
+                    Create Job Entry
+                </button>
             </div>
-            <div class="mt-3 text-sm text-gray-700">
-                ${system ? `<p class="font-medium text-gray-800">System: ${escapeHtml(system)}</p>` : ''}
+            <div class="mt-2 text-xs text-slate-700">
+                ${system ? `<p class="font-medium text-slate-800">System: ${escapeHtml(system)}</p>` : ''}
                 <p class="mt-1 whitespace-pre-wrap">${escapeHtml(description || 'No request/issue provided.')}</p>
             </div>
         </div>
@@ -562,7 +862,7 @@ function updateFormStatus(formType, message, isError = false) {
     if (!statusEl) return;
     statusEl.textContent = message;
     statusEl.classList.toggle('text-red-600', Boolean(isError));
-    statusEl.classList.toggle('text-gray-500', !isError);
+    statusEl.classList.toggle('text-slate-500', !isError);
 }
 
 function sortEntriesByTimestamp(entries) {
@@ -703,27 +1003,39 @@ function prefillJobForm(jobData) {
 // ============================================
 
 function showTab(tabName) {
+    // Hide all tab content
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    document.querySelectorAll('nav button').forEach(b => {
-        b.classList.remove('text-blue-700', 'border-b-4', 'border-blue-700');
-        b.classList.add('text-gray-500');
+
+    // Reset all tab buttons to inactive style
+    document.querySelectorAll('#app-nav button').forEach(b => {
+        b.classList.remove('text-blue-700', 'border-blue-700');
+        b.classList.add('text-slate-500', 'border-transparent');
     });
-    
+
+    // Activate the selected tab + show its content
     if (tabName === 'dashboard') {
         document.getElementById('dashboard-view').classList.remove('hidden');
-        document.getElementById('dashboard-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+        const btn = document.getElementById('dashboard-tab');
+        btn.classList.add('text-blue-700', 'border-blue-700');
+        btn.classList.remove('border-transparent');
         fetchJobStatusCounts();
         fetchScheduleData();
     } else if (tabName === 'checkin') {
         document.getElementById('checkin-view').classList.remove('hidden');
-        document.getElementById('checkin-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+        const btn = document.getElementById('checkin-tab');
+        btn.classList.add('text-blue-700', 'border-blue-700');
+        btn.classList.remove('border-transparent');
     } else if (tabName === 'forms') {
         document.getElementById('forms-view').classList.remove('hidden');
-        document.getElementById('forms-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+        const btn = document.getElementById('forms-tab');
+        btn.classList.add('text-blue-700', 'border-blue-700');
+        btn.classList.remove('border-transparent');
         loadFormEntries();
     } else if (tabName === 'joblog') {
         document.getElementById('joblog-view').classList.remove('hidden');
-        document.getElementById('joblog-tab').classList.add('text-blue-700', 'border-b-4', 'border-blue-700');
+        const btn = document.getElementById('joblog-tab');
+        btn.classList.add('text-blue-700', 'border-blue-700');
+        btn.classList.remove('border-transparent');
         fetchJobLog();
     }
 }
@@ -738,37 +1050,40 @@ async function fetchJobStatusCounts() {
         const response = await fetch(`${WEB_APP_URL}?sheet=MasterLogStatus`);
         if (!response.ok) throw new Error('HTTP error');
         const counts = await response.json();
-        
+
         const totalJobs = Object.values(counts).reduce((sum, count) => sum + count, 0);
-        
+
         container.innerHTML = `
-            <div onclick="showJobDetails('all')" class="flex justify-between p-4 bg-indigo-100 rounded-lg border-2 border-indigo-500 mb-4 cursor-pointer hover:bg-indigo-200 transition-colors">
-                <span class="font-bold text-gray-800 text-lg">Current Jobs:</span>
-                <span class="text-indigo-700 font-extrabold text-2xl">${totalJobs}</span>
+            <div onclick="showJobDetails('all')" class="flex justify-between items-center p-4 bg-indigo-50 rounded-xl border-2 border-indigo-500 mb-4 cursor-pointer hover:bg-indigo-100 transition-colors">
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-wide text-indigo-700 font-semibold">Current Jobs</span>
+                    <span class="text-xs text-slate-500">All active statuses</span>
+                </div>
+                <span class="text-indigo-700 font-extrabold text-3xl">${totalJobs}</span>
             </div>
-            <div onclick="showJobDetails('1. Checked In: Diagnostics')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition-colors">
-                <span class="font-medium text-gray-700">Checked In: Diagnostics:</span>
-                <span class="text-blue-600 font-bold text-xl">${counts['1. Checked In: Diagnostics'] || 0}</span>
+            <div onclick="showJobDetails('1. Checked In: Diagnostics')" class="flex justify-between p-3 bg-slate-50 rounded-lg border-l-4 border-blue-600 cursor-pointer hover:bg-blue-50 transition-colors">
+                <span class="text-sm font-medium text-slate-700">Checked In: Diagnostics</span>
+                <span class="text-blue-600 font-bold text-lg">${counts['1. Checked In: Diagnostics'] || 0}</span>
             </div>
-            <div onclick="showJobDetails('2. Awaiting Customer Approval')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-orange-500 cursor-pointer hover:bg-orange-50 transition-colors">
-                <span class="font-medium text-gray-700">Awaiting Customer Approval:</span>
-                <span class="text-orange-500 font-bold text-xl">${counts['2. Awaiting Customer Approval'] || 0}</span>
+            <div onclick="showJobDetails('2. Awaiting Customer Approval')" class="flex justify-between p-3 bg-slate-50 rounded-lg border-l-4 border-orange-500 cursor-pointer hover:bg-orange-50 transition-colors">
+                <span class="text-sm font-medium text-slate-700">Awaiting Customer Approval</span>
+                <span class="text-orange-500 font-bold text-lg">${counts['2. Awaiting Customer Approval'] || 0}</span>
             </div>
-            <div onclick="showJobDetails('3. Awaiting Parts (Vendor Side)')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-yellow-600 cursor-pointer hover:bg-yellow-50 transition-colors">
-                <span class="font-medium text-gray-700">Awaiting Parts:</span>
-                <span class="text-yellow-600 font-bold text-xl">${counts['3. Awaiting Parts (Vendor Side)'] || 0}</span>
+            <div onclick="showJobDetails('3. Awaiting Parts (Vendor Side)')" class="flex justify-between p-3 bg-slate-50 rounded-lg border-l-4 border-yellow-600 cursor-pointer hover:bg-yellow-50 transition-colors">
+                <span class="text-sm font-medium text-slate-700">Awaiting Parts</span>
+                <span class="text-yellow-600 font-bold text-lg">${counts['3. Awaiting Parts (Vendor Side)'] || 0}</span>
             </div>
-            <div onclick="showJobDetails('4. In Progress: Repair/Install')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-purple-600 cursor-pointer hover:bg-purple-50 transition-colors">
-                <span class="font-medium text-gray-700">In Progress:</span>
-                <span class="text-purple-600 font-bold text-xl">${counts['4. In Progress: Repair/Install'] || 0}</span>
+            <div onclick="showJobDetails('4. In Progress: Repair/Install')" class="flex justify-between p-3 bg-slate-50 rounded-lg border-l-4 border-purple-600 cursor-pointer hover:bg-purple-50 transition-colors">
+                <span class="text-sm font-medium text-slate-700">In Progress</span>
+                <span class="text-purple-600 font-bold text-lg">${counts['4. In Progress: Repair/Install'] || 0}</span>
             </div>
-            <div onclick="showJobDetails('5. Ready for Pickup/Delivery')" class="flex justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-600 cursor-pointer hover:bg-green-50 transition-colors">
-                <span class="font-medium text-gray-700">Ready for Pickup/Delivery:</span>
-                <span class="text-green-600 font-bold text-xl">${counts['5. Ready for Pickup/Delivery'] || 0}</span>
+            <div onclick="showJobDetails('5. Ready for Pickup/Delivery')" class="flex justify-between p-3 bg-slate-50 rounded-lg border-l-4 border-green-600 cursor-pointer hover:bg-green-50 transition-colors">
+                <span class="text-sm font-medium text-slate-700">Ready for Pickup/Delivery</span>
+                <span class="text-green-600 font-bold text-lg">${counts['5. Ready for Pickup/Delivery'] || 0}</span>
             </div>
         `;
     } catch (error) {
-        container.innerHTML = '<p class="text-red-500">Error loading job counts.</p>';
+        container.innerHTML = '<p class="text-red-500 text-sm">Error loading job counts.</p>';
     }
 }
 
@@ -776,7 +1091,7 @@ async function fetchScheduleData() {
     const list = document.getElementById('schedule-list');
     const loading = document.getElementById('schedule-loading');
     const errorMsg = document.getElementById('schedule-error');
-    
+
     list.innerHTML = '';
     loading.classList.remove('hidden');
     errorMsg.classList.add('hidden');
@@ -785,19 +1100,19 @@ async function fetchScheduleData() {
         const response = await fetch(WEB_APP_URL);
         if (!response.ok) throw new Error('HTTP error');
         const data = await response.json();
-        
+
         loading.classList.add('hidden');
 
         if (!data || data.length === 0) {
-            list.innerHTML = '<p class="text-gray-500 italic">No appointments scheduled.</p>';
+            list.innerHTML = '<p class="text-slate-500 italic text-sm">No appointments scheduled.</p>';
             return;
         }
 
         const now = new Date();
         now.setHours(0, 0, 0, 0);
-        
+
         const events = data.filter(item => {
-            const eventDate = new Date(item.Event_Date);  
+            const eventDate = new Date(item.Event_Date);
             if (isNaN(eventDate.getTime())) return false;
             const eventDay = new Date(eventDate);
             eventDay.setHours(0, 0, 0, 0);
@@ -805,13 +1120,13 @@ async function fetchScheduleData() {
         });
 
         if (events.length === 0) {
-            list.innerHTML = '<p class="text-gray-500 italic">No upcoming appointments.</p>';
+            list.innerHTML = '<p class="text-slate-500 italic text-sm">No upcoming appointments.</p>';
             return;
         }
 
         const todayEvents = [];
         const upcomingEvents = [];
-        const todayDateString = now.toLocaleDateString(undefined, {weekday: 'long', month: 'long', day: 'numeric'});
+        const todayDateString = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
         events.forEach(item => {
             const itemDate = new Date(item.Event_Date);
@@ -824,19 +1139,19 @@ async function fetchScheduleData() {
                 upcomingEvents.push(item);
             }
         });
-        
+
         if (todayEvents.length > 0) {
             todayEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
-            list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4>`;
+            list.innerHTML += `<h4 class="text-sm font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-1">Today • ${todayDateString}</h4>`;
             todayEvents.forEach(item => list.innerHTML += createScheduleItem(item, 'bg-blue-50'));
         } else {
-            list.innerHTML += `<h4 class="text-lg font-bold text-gray-800 mb-2 border-b pb-1">Today, ${todayDateString}</h4><p class="text-gray-500 italic ml-2">No appointments today.</p>`;
+            list.innerHTML += `<h4 class="text-sm font-semibold text-slate-900 mb-1 border-b border-slate-200 pb-1">Today • ${todayDateString}</h4><p class="text-slate-500 italic ml-1 text-xs">No appointments today.</p>`;
         }
-        
+
         if (upcomingEvents.length > 0) {
-            list.innerHTML += '<h4 class="text-lg font-bold text-gray-800 border-t pt-3 mt-4">Upcoming Schedule</h4>';
+            list.innerHTML += '<h4 class="text-sm font-semibold text-slate-900 border-t border-slate-200 pt-3 mt-3 mb-1">Upcoming Schedule</h4>';
             upcomingEvents.sort((a, b) => new Date(a.Event_Date) - new Date(b.Event_Date));
-            upcomingEvents.forEach(item => list.innerHTML += createScheduleItem(item, 'bg-gray-50'));
+            upcomingEvents.forEach(item => list.innerHTML += createScheduleItem(item, 'bg-slate-50'));
         }
 
     } catch (error) {
@@ -849,27 +1164,27 @@ async function fetchScheduleData() {
 
 function createScheduleItem(item, bgColor) {
     const eventDate = new Date(item.Event_Date);
-    const displayDate = eventDate.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
+    const displayDate = eventDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     const timeText = item['Time_Start_End'] || 'Time N/A';
     const clientName = item['Client_Name'] || 'Client N/A';
     const jobId = item['Job_ID'] || 'No Job ID';
     const location = item['Location/Address'] || 'N/A';
     const notes = item['Event_Notes'] || '';
-    const notesHtml = notes ? `<span class="text-xs text-gray-500 mt-1 block">Notes: ${notes}</span>` : '';
-    
+    const notesHtml = notes ? `<span class="text-[11px] text-slate-500 mt-1 block">Notes: ${notes}</span>` : '';
+
     return `
-        <div class="p-4 ${bgColor} rounded-lg shadow-sm border-l-4 border-blue-500">
-            <div class="flex justify-between items-start mb-2">
+        <div class="p-3 ${bgColor} rounded-xl shadow-sm border border-slate-200/70 mb-1">
+            <div class="flex justify-between items-start mb-1.5 gap-3">
                 <div>
-                    <div class="font-bold text-blue-800 text-lg">${timeText}</div>
-                    <div class="text-sm text-gray-600">${displayDate}</div>
+                    <div class="font-semibold text-blue-900 text-sm leading-tight">${timeText}</div>
+                    <div class="text-[11px] text-slate-500">${displayDate}</div>
                 </div>
                 <div class="text-right">
-                    <div class="font-semibold text-gray-800">${clientName}</div>
-                    <div class="text-sm text-gray-500">${jobId}</div>
+                    <div class="font-medium text-slate-900 text-sm">${clientName}</div>
+                    <div class="text-[11px] text-slate-500">${jobId}</div>
                 </div>
             </div>
-            <div class="text-sm text-gray-700 mt-2">
+            <div class="text-[12px] text-slate-700 mt-1">
                 <span class="font-medium">Location:</span> ${location}
                 ${notesHtml}
             </div>
@@ -885,37 +1200,37 @@ async function showJobDetails(status) {
     const modal = document.getElementById('job-details-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
-    
+
     modal.classList.remove('hidden');
     modalContent.innerHTML = `
         <div class="flex items-center justify-center py-12">
             <span class="spinner mr-2"></span>
-            <span class="text-gray-500">Loading jobs...</span>
+            <span class="text-slate-500">Loading jobs...</span>
         </div>
     `;
-    
+
     modalTitle.textContent = status === 'all' ? 'All Current Jobs' : status;
-    
+
     try {
         const response = await fetch(`${WEB_APP_URL}?action=getJobsByStatus&status=${encodeURIComponent(status)}`);
         if (!response.ok) throw new Error('HTTP error');
         const jobs = await response.json();
-        
+
         if (!jobs || jobs.length === 0) {
-            modalContent.innerHTML = '<p class="text-gray-500 text-center py-12">No jobs found for this status.</p>';
+            modalContent.innerHTML = '<p class="text-slate-500 text-center py-12 text-sm">No jobs found for this status.</p>';
             return;
         }
-        
-        let html = '<div class="space-y-4">';
+
+        let html = '<div class="space-y-3">';
         jobs.forEach(job => {
             html += createJobCard(job);
         });
         html += '</div>';
-        
+
         modalContent.innerHTML = html;
     } catch (error) {
         console.error('Error fetching job details:', error);
-        modalContent.innerHTML = '<p class="text-red-500 text-center py-12">Error loading job details. Please try again.</p>';
+        modalContent.innerHTML = '<p class="text-red-500 text-center py-12 text-sm">Error loading job details. Please try again.</p>';
     }
 }
 
@@ -930,45 +1245,52 @@ function createJobCard(job) {
         '3. Awaiting Parts (Vendor Side)': 'border-yellow-600 bg-yellow-50',
         '4. In Progress: Repair/Install': 'border-purple-600 bg-purple-50',
         '5. Ready for Pickup/Delivery': 'border-green-600 bg-green-50',
-        'Completed': 'border-gray-500 bg-gray-50'
+        'Completed': 'border-slate-500 bg-slate-50'
     };
-    
-    const colorClass = statusColors[job.Status] || 'border-gray-400 bg-gray-50';
-    
+
+    const colorClass = statusColors[job.Status] || 'border-slate-400 bg-white';
+
     return `
-        <div class="border-l-4 ${colorClass} p-4 rounded-lg shadow-sm">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border-l-4 ${colorClass} p-4 rounded-xl shadow-sm text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                    <div class="font-bold text-lg text-gray-800 mb-2">
-                        Job ID: <span class="text-blue-600">${job.Job_ID || 'N/A'}</span>
+                    <div class="font-bold text-base text-slate-900 mb-1">
+                        Job ID:
+                        <span class="text-blue-700">${job.Job_ID || 'N/A'}</span>
                     </div>
-                    <div class="text-sm space-y-1">
+                    <div class="space-y-0.5 text-[13px] text-slate-700">
                         <p><span class="font-semibold">Client:</span> ${job.Client_Name || 'N/A'}</p>
                         <p><span class="font-semibold">Email:</span> ${job.Client_Email || 'N/A'}</p>
                         <p><span class="font-semibold">Phone:</span> ${job.Client_Phone || 'N/A'}</p>
                     </div>
                 </div>
-                <div>
-                    <div class="text-sm space-y-1">
-                        <p><span class="font-semibold">Service Type:</span> ${job.Service_Type || 'N/A'}</p>
-                        <p><span class="font-semibold">Due Date:</span> ${job.Due_Date || 'N/A'}</p>
-                        <p><span class="font-semibold">System:</span> ${job.System_Make_Model || 'N/A'}</p>
-                        <p><span class="font-semibold">Status:</span> <span class="font-medium">${job.Status || 'N/A'}</span></p>
-                    </div>
+                <div class="text-[13px] text-slate-700 space-y-0.5">
+                    <p><span class="font-semibold">Service Type:</span> ${job.Service_Type || 'N/A'}</p>
+                    <p><span class="font-semibold">Due Date:</span> ${job.Due_Date || 'N/A'}</p>
+                    <p><span class="font-semibold">System:</span> ${job.System_Make_Model || 'N/A'}</p>
+                    <p><span class="font-semibold">Status:</span> <span class="font-medium">${job.Status || 'N/A'}</span></p>
                 </div>
             </div>
-            ${job.Date_Completed ? `
-                <div class="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-                    <p class="font-semibold mb-1">Completed:</p>
+            ${
+                job.Date_Completed
+                    ? `
+                <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-[13px] text-green-800">
+                    <p class="font-semibold mb-0.5">Completed:</p>
                     <p>${formatDisplayDate(job.Date_Completed)}</p>
                 </div>
-            ` : ''}
-            ${job.Initial_Request ? `
-                <div class="mt-3 pt-3 border-t border-gray-300">
-                    <p class="font-semibold text-sm text-gray-700 mb-1">Initial Request:</p>
-                    <p class="text-sm text-gray-600">${job.Initial_Request}</p>
+            `
+                    : ''
+            }
+            ${
+                job.Initial_Request
+                    ? `
+                <div class="mt-3 pt-2 border-t border-slate-200">
+                    <p class="font-semibold text-[13px] text-slate-800 mb-1">Initial Request:</p>
+                    <p class="text-[13px] text-slate-600 whitespace-pre-wrap">${job.Initial_Request}</p>
                 </div>
-            ` : ''}
+            `
+                    : ''
+            }
         </div>
     `;
 }
@@ -980,36 +1302,36 @@ function createJobCard(job) {
 async function fetchJobLog() {
     const container = document.getElementById('joblog-container');
     const refreshIcon = document.getElementById('refresh-icon');
-    
+
     container.innerHTML = `
         <div class="p-8 text-center">
             <span class="spinner mr-2 inline-block"></span>
-            <span class="text-gray-500">Loading jobs...</span>
+            <span class="text-slate-500 text-sm">Loading jobs...</span>
         </div>
     `;
-    
+
     if (refreshIcon) {
         refreshIcon.style.animation = 'spin 1s linear infinite';
     }
-    
+
     try {
         const response = await fetch(`${WEB_APP_URL}?action=getAllJobs`);
         if (!response.ok) throw new Error('HTTP error');
         const jobs = await response.json();
-        
+
         if (refreshIcon) {
             refreshIcon.style.animation = '';
         }
-        
+
         if (!jobs || jobs.length === 0) {
-            container.innerHTML = '<div class="p-8 text-center text-gray-500">No jobs found.</div>';
+            container.innerHTML = '<div class="p-8 text-center text-slate-500 text-sm">No jobs found.</div>';
             return;
         }
-        
+
         displayJobLogTable(jobs);
     } catch (error) {
         console.error('Error fetching job log:', error);
-        container.innerHTML = '<div class="p-8 text-center text-red-500">Error loading job log. Please try again.</div>';
+        container.innerHTML = '<div class="p-8 text-center text-red-500 text-sm">Error loading job log. Please try again.</div>';
         if (refreshIcon) {
             refreshIcon.style.animation = '';
         }
@@ -1030,36 +1352,40 @@ function displayJobLogTable(jobs) {
         return timeB - timeA;
     });
 
-    let html = '<div class="space-y-8">';
+    let html = '<div class="space-y-6">';
 
     html += `
-        <section class="bg-white rounded-xl shadow-lg border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-xl font-semibold text-gray-800">Active Jobs (${activeJobs.length})</h3>
-                <p class="text-sm text-gray-500">Jobs with no completion date</p>
+        <section class="bg-white rounded-2xl shadow-md border border-slate-200">
+            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-900">Active Jobs (${activeJobs.length})</h3>
+                <p class="text-xs text-slate-500">Jobs with no completion date</p>
             </div>
-            <div class="p-6">
-                ${activeJobs.length ? createJobTable(activeJobs, { showMarkDone: true }) : '<p class="text-gray-500 text-sm">No active jobs at the moment.</p>'}
+            <div class="p-5">
+                ${
+                    activeJobs.length
+                        ? createJobTable(activeJobs, { showMarkDone: true })
+                        : '<p class="text-slate-500 text-sm">No active jobs at the moment.</p>'
+                }
             </div>
         </section>
     `;
 
     const completedTable = completedJobs.length
         ? createJobTable(completedJobs, { showCompletionDate: true })
-        : '<p class="text-gray-500 text-sm">No completed jobs recorded yet.</p>';
+        : '<p class="text-slate-500 text-sm">No completed jobs recorded yet.</p>';
 
     html += `
         <section>
-            <details id="completed-jobs" class="group bg-white rounded-xl shadow-lg border border-gray-200" ${completedJobs.length ? '' : 'open'}>
-                <summary class="cursor-pointer px-6 py-4 flex items-center justify-between">
+            <details id="completed-jobs" class="group bg-white rounded-2xl shadow-md border border-slate-200" ${completedJobs.length ? '' : 'open'}>
+                <summary class="cursor-pointer px-5 py-3 flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-semibold text-gray-800">Completed Jobs (${completedJobs.length})</h3>
-                        <p class="text-sm text-gray-500">Jobs moved out of the active log</p>
+                        <h3 class="text-lg font-semibold text-slate-900">Completed Jobs (${completedJobs.length})</h3>
+                        <p class="text-xs text-slate-500">Jobs moved out of the active log</p>
                     </div>
-                    <span class="text-sm text-blue-600 group-open:hidden">Show</span>
-                    <span class="text-sm text-blue-600 hidden group-open:block">Hide</span>
+                    <span class="text-xs text-blue-600 group-open:hidden">Show</span>
+                    <span class="text-xs text-blue-600 hidden group-open:block">Hide</span>
                 </summary>
-                <div class="p-6 pt-0">
+                <div class="p-5 pt-0">
                     ${completedTable}
                 </div>
             </details>
@@ -1078,46 +1404,58 @@ function createJobTable(jobs, { showCompletionDate = false, showMarkDone = false
 
     let table = `
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-100 border-b-2 border-gray-300">
+            <table class="w-full text-xs sm:text-sm">
+                <thead class="bg-slate-100 border-b border-slate-300">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Job ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Client Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Service Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Due Date</th>
-                        ${showCompletionDate ? '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date Completed</th>' : ''}
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Job ID</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Client Name</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Service Type</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Due Date</th>
+                        ${
+                            showCompletionDate
+                                ? '<th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Date Completed</th>'
+                                : ''
+                        }
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Status</th>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 uppercase tracking-wide">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-slate-200">
+    */
+
     `;
 
     jobs.forEach((job, index) => {
-        const rowColor = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        const rowColor = index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
         const actionButtons = [
             `<button onclick="editJob(${job.rowIndex})" class="text-blue-600 hover:text-blue-800 font-semibold">Edit</button>`,
-            `<button onclick="viewJobDetails(${job.rowIndex})" class="text-green-600 hover:text-green-800 font-semibold">View</button>`
+            `<button onclick="viewJobDetails(${job.rowIndex})" class="text-emerald-600 hover:text-emerald-800 font-semibold">View</button>`
         ];
 
         if (showMarkDone) {
-            actionButtons.push(`<button onclick="markJobDone(${job.rowIndex}, this)" class="text-indigo-600 hover:text-indigo-800 font-semibold">Mark Done</button>`);
+            actionButtons.push(
+                `<button onclick="markJobDone(${job.rowIndex}, this)" class="text-indigo-600 hover:text-indigo-800 font-semibold">Mark Done</button>`
+            );
         }
 
         table += `
-            <tr class="${rowColor} hover:bg-blue-50 transition-colors">
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">${job.Job_ID || 'N/A'}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">${job.Client_Name || 'N/A'}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">${job.Service_Type || 'N/A'}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">${job.Due_Date || 'N/A'}</td>
-                ${showCompletionDate ? `<td class="px-4 py-3 text-sm text-gray-700">${formatDisplayDate(job.Date_Completed) || 'N/A'}</td>` : ''}
-                <td class="px-4 py-3 text-sm">
-                    <span class="px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(job.Status)}">
+            <tr class="${rowColor} hover:bg-blue-50/60 transition-colors">
+                <td class="px-3 py-2 font-medium text-slate-900 whitespace-nowrap">${job.Job_ID || 'N/A'}</td>
+                <td class="px-3 py-2 text-slate-700 whitespace-nowrap">${job.Client_Name || 'N/A'}</td>
+                <td class="px-3 py-2 text-slate-700 whitespace-nowrap">${job.Service_Type || 'N/A'}</td>
+                <td class="px-3 py-2 text-slate-700 whitespace-nowrap">${job.Due_Date || 'N/A'}</td>
+                ${
+                    showCompletionDate
+                        ? `<td class="px-3 py-2 text-slate-700 whitespace-nowrap">${formatDisplayDate(job.Date_Completed) || 'N/A'}</td>`
+                        : ''
+                }
+                <td class="px-3 py-2">
+                    <span class="px-2 py-1 rounded-full text-[11px] font-semibold ${getStatusBadgeColor(job.Status)}">
                         ${job.Status || 'N/A'}
                     </span>
                 </td>
-                <td class="px-4 py-3 text-sm">
-                    <div class="flex flex-wrap gap-3">
+                <td class="px-3 py-2">
+                    <div class="flex flex-wrap gap-2">
                         ${actionButtons.join('')}
                     </div>
                 </td>
@@ -1141,9 +1479,9 @@ function getStatusBadgeColor(status) {
         '3. Awaiting Parts (Vendor Side)': 'bg-yellow-100 text-yellow-800',
         '4. In Progress: Repair/Install': 'bg-purple-100 text-purple-800',
         '5. Ready for Pickup/Delivery': 'bg-green-100 text-green-800',
-        'Completed': 'bg-gray-200 text-gray-800'
+        'Completed': 'bg-slate-200 text-slate-800'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-slate-100 text-slate-800';
 }
 
 function parseDateString(dateString) {
@@ -1213,7 +1551,7 @@ async function editJob(rowIndex) {
         const response = await fetch(`${WEB_APP_URL}?action=getJobByRow&rowIndex=${rowIndex}`);
         if (!response.ok) throw new Error('HTTP error');
         const job = await response.json();
-        
+
         showEditModal(job, rowIndex);
     } catch (error) {
         console.error('Error fetching job for edit:', error);
@@ -1225,32 +1563,56 @@ function showEditModal(job, rowIndex) {
     const modal = document.getElementById('job-details-modal');
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
-    
+
     modalTitle.textContent = `Edit Job: ${job.Job_ID}`;
-    
+
     modalContent.innerHTML = `
-        <form id="edit-job-form" class="space-y-4">
+        <form id="edit-job-form" class="space-y-4 text-sm">
             <input type="hidden" id="edit-rowIndex" value="${rowIndex}">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Job ID</label>
-                    <input type="text" id="edit-jobId" value="${job.Job_ID || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Job ID</label>
+                    <input
+                        type="text"
+                        id="edit-jobId"
+                        value="${job.Job_ID || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100"
+                        readonly
+                    >
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Client Name</label>
-                    <input type="text" id="edit-clientName" value="${job.Client_Name || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Client Name</label>
+                    <input
+                        type="text"
+                        id="edit-clientName"
+                        value="${job.Client_Name || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    >
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Client Email</label>
-                    <input type="email" id="edit-clientEmail" value="${job.Client_Email || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Client Email</label>
+                    <input
+                        type="email"
+                        id="edit-clientEmail"
+                        value="${job.Client_Email || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    >
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Client Phone</label>
-                    <input type="tel" id="edit-clientPhone" value="${job.Client_Phone || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Client Phone</label>
+                    <input
+                        type="tel"
+                        id="edit-clientPhone"
+                        value="${job.Client_Phone || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    >
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Service Type</label>
-                    <select id="edit-serviceType" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Service Type</label>
+                    <select
+                        id="edit-serviceType"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                    >
                         <option value="In-Shop" ${job.Service_Type === 'In-Shop' ? 'selected' : ''}>In-Shop</option>
                         <option value="Onsite" ${job.Service_Type === 'Onsite' ? 'selected' : ''}>Onsite</option>
                         <option value="Remote" ${job.Service_Type === 'Remote' ? 'selected' : ''}>Remote</option>
@@ -1258,12 +1620,20 @@ function showEditModal(job, rowIndex) {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Due Date</label>
-                    <input type="date" id="edit-dueDate" value="${job.Due_Date || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Due Date</label>
+                    <input
+                        type="date"
+                        id="edit-dueDate"
+                        value="${job.Due_Date || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    >
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-                    <select id="edit-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                    <select
+                        id="edit-status"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                    >
                         <option value="1. Checked In: Diagnostics" ${job.Status === '1. Checked In: Diagnostics' ? 'selected' : ''}>1. Checked In: Diagnostics</option>
                         <option value="2. Awaiting Customer Approval" ${job.Status === '2. Awaiting Customer Approval' ? 'selected' : ''}>2. Awaiting Customer Approval</option>
                         <option value="3. Awaiting Parts (Vendor Side)" ${job.Status === '3. Awaiting Parts (Vendor Side)' ? 'selected' : ''}>3. Awaiting Parts (Vendor Side)</option>
@@ -1273,32 +1643,56 @@ function showEditModal(job, rowIndex) {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">System Make/Model</label>
-                    <input type="text" id="edit-systemMake" value="${job.System_Make_Model || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">System Make/Model</label>
+                    <input
+                        type="text"
+                        id="edit-systemMake"
+                        value="${job.System_Make_Model || ''}"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                    >
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Initial Request</label>
-                <textarea id="edit-initialRequest" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg">${job.Initial_Request || ''}</textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Initial Request</label>
+                <textarea
+                    id="edit-initialRequest"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >${job.Initial_Request || ''}</textarea>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Job Notes</label>
-                <textarea id="edit-jobNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg">${job.Job_Notes || ''}</textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Job Notes</label>
+                <textarea
+                    id="edit-jobNotes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                >${job.Job_Notes || ''}</textarea>
             </div>
-            <div class="flex justify-end space-x-3 pt-4">
-                <button type="button" onclick="closeJobDetails()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg">Cancel</button>
-                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Save Changes</button>
+            <div class="flex justify-end space-x-3 pt-3">
+                <button
+                    type="button"
+                    onclick="closeJobDetails()"
+                    class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
+                >
+                    Save Changes
+                </button>
             </div>
         </form>
     `;
-    
+
     document.getElementById('edit-job-form').addEventListener('submit', saveJobEdit);
     modal.classList.remove('hidden');
 }
 
 async function saveJobEdit(e) {
     e.preventDefault();
-    
+
     const rowIndex = document.getElementById('edit-rowIndex').value;
     const updatedJob = {
         rowIndex: parseInt(rowIndex),
@@ -1313,19 +1707,19 @@ async function saveJobEdit(e) {
         Initial_Request: document.getElementById('edit-initialRequest').value,
         Job_Notes: document.getElementById('edit-jobNotes').value
     };
-    
+
     try {
         const params = new URLSearchParams();
         params.append('action', 'updateJob');
         params.append('data', JSON.stringify(updatedJob));
-        
+
         const response = await fetch(WEB_APP_URL, {
             method: 'POST',
             body: params
         });
-        
+
         const result = await response.json();
-        
+
         if (result.result === 'success') {
             closeJobDetails();
             fetchJobLog();
@@ -1344,11 +1738,11 @@ async function viewJobDetails(rowIndex) {
         const response = await fetch(`${WEB_APP_URL}?action=getJobByRow&rowIndex=${rowIndex}`);
         if (!response.ok) throw new Error('HTTP error');
         const job = await response.json();
-        
+
         const modal = document.getElementById('job-details-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
-        
+
         modalTitle.textContent = `Job Details: ${job.Job_ID}`;
         modalContent.innerHTML = createJobCard(job);
         modal.classList.remove('hidden');
