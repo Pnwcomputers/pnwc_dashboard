@@ -1178,7 +1178,7 @@ function createScheduleItem(item, bgColor) {
     const timeText = item['Time_Start_End'] || 'Time N/A';
     const clientName = item['Client_Name'] || 'Client N/A';
     const jobId = item['Job_ID'] || 'No Job ID';
-    const location = item['Location/Address'] || 'N/A';
+    const location = item['Location_Address'] || 'N/A';  // ✅ matches Apps Script key
     const notes = item['Event_Notes'] || '';
     const notesHtml = notes ? `<span class="text-[11px] text-slate-500 mt-1 block">Notes: ${notes}</span>` : '';
 
@@ -1431,8 +1431,6 @@ function createJobTable(jobs, { showCompletionDate = false, showMarkDone = false
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
-    */
-
     `;
 
     jobs.forEach((job, index) => {
