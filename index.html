@@ -14,7 +14,25 @@
 
     body {
         font-family: 'Inter', sans-serif;
-        background: radial-gradient(circle at top, #e0f2fe 0, #e5e7eb 45%, #f3f4f6 100%);
+        position: relative;
+        min-height: 100vh;
+        margin: 0;
+        background-image: url('http://pnwcomputer.com/Photos/tech_BG.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        overflow-x: hidden;
+    }
+
+/* White translucent overlay over the whole page */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.7); /* 0.7 is soft. Change for subtlety */
+        backdrop-filter: blur(2px);           /* Optional elegant blur */
+        z-index: -1;                          /* Make sure everything stays above it */
     }
 
     .spinner {
