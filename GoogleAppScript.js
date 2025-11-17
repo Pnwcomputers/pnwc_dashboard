@@ -2,6 +2,10 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 const MASTER_LOG_SHEET_NAME = 'Master Job Log';
 const SCHEDULE_SHEET_NAME = 'Onsite Schedule';
 const CALENDAR_NAME = 'Pacific NW Computers';
+const CHECKIN_FORM_SPREADSHEET_ID = '1bm_3Gkngqeq3FoMNRfYegiWC6PEEHQn50SYONFCwz1o';
+const CHECKIN_FORM_SHEET_NAME = 'Pacific Northwest Check-In Form';
+const INTAKE_FORM_SPREADSHEET_ID = '1e6jf-ZqfjZqc1WWYcKq6eae1LPTglPBM8SbniJTo9FI';
+const INTAKE_FORM_SHEET_NAME = 'Intake Questions Form (Responses)';
 
 // ============================================
 // EMAIL FUNCTIONS (NEW)
@@ -305,10 +309,14 @@ function doGet(e) {
   const status = e.parameter.status;
   const sheetParam = e.parameter.sheet;
   const rowIndex = e.parameter.rowIndex;
-  
+
   // Handle get all jobs request (for Job Log view)
   if (action === 'getAllJobs') {
     return getAllJobs();
+  }
+
+  if (action === 'getFormEntries') {
+    return getFormEntries(e.parameter.formType);
   }
   
   // Handle get single job by row index (for editing)
@@ -391,6 +399,33 @@ function getSheetDataAsJson(sheet) {
     data.push(row);
   }
   return data;
+}
+
+function getFormEntries(formType) {
+  try {
+    let spreadsheetId = CHECKIN_FORM_SPREADSHEET_ID;
+    let sheetName = CHECKIN_FORM_SHEET_NAME;
+
+    if (formType === 'intake') {
+      spreadsheetId = INTAKE_FORM_SPREADSHEET_ID;
+      sheetName = INTAKE_FORM_SHEET_NAME;
+    }
+
+    const formSpreadsheet = SpreadsheetApp.openById(spreadsheetId);
+    let sheet = formSpreadsheet.getSheetByName(sheetName);
+    if (!sheet) {
+      const sheets = formSpreadsheet.getSheets();
+      if (!sheets || sheets.length === 0) {
+        throw new Error('Form sheet not found');
+      }
+      sheet = sheets[0];
+    }
+
+    const entries = getSheetDataAsJson(sheet);
+    return createJsonResponse({ result: 'success', entries });
+  } catch (error) {
+    return createJsonResponse({ result: 'error', message: error.message });
+  }
 }
 
 function getMasterLogStatusCounts(sheet) {
