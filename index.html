@@ -177,55 +177,43 @@
 
         <!-- Navigation Tabs -->
         <nav
-            id="app-nav"
-            class="app-content-hidden mb-6 border-b border-slate-200 flex justify-center"
+    id="app-nav"
+    class="app-content-hidden mb-6 flex justify-center"
+>
+    <div class="flex space-x-2 sm:space-x-4">
+        <button
+            id="dashboard-tab"
+            onclick="showTab('dashboard')"
+            class="tab-btn tab-btn-active"
         >
-            <div class="flex space-x-1 sm:space-x-4">
-<button
-    id="dashboard-tab"
-    onclick="showTab('dashboard')"
-    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
-           bg-blue-700 text-white rounded-md shadow 
-           hover:bg-blue-800 transition 
-           border border-blue-700"
->
-    Dashboard
-</button>
+            Dashboard
+        </button>
 
-<button
-    id="checkin-tab"
-    onclick="showTab('checkin')"
-    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
-           bg-white text-slate-700 rounded-md shadow 
-           hover:bg-slate-100 transition 
-           border border-slate-300"
->
-    New Job Check-In
-</button>
+        <button
+            id="checkin-tab"
+            onclick="showTab('checkin')"
+            class="tab-btn"
+        >
+            New Job Check-In
+        </button>
 
-<button
-    id="forms-tab"
-    onclick="showTab('forms')"
-    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
-           bg-white text-slate-700 rounded-md shadow 
-           hover:bg-slate-100 transition 
-           border border-slate-300"
->
-    Form Entries
-</button>
+        <button
+            id="forms-tab"
+            onclick="showTab('forms')"
+            class="tab-btn"
+        >
+            Form Entries
+        </button>
 
-<button
-    id="joblog-tab"
-    onclick="showTab('joblog')"
-    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
-           bg-white text-slate-700 rounded-md shadow 
-           hover:bg-slate-100 transition 
-           border border-slate-300"
->
-    Job Log
-</button>
-            </div>
-        </nav>
+        <button
+            id="joblog-tab"
+            onclick="showTab('joblog')"
+            class="tab-btn"
+        >
+            Job Log
+        </button>
+    </div>
+</nav>
 
         <!-- Main Content -->
         <main
@@ -1101,38 +1089,32 @@ function showTab(tabName) {
     // Hide all tab content
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
 
-    // Reset all tab buttons to inactive style
-    document.querySelectorAll('#app-nav button').forEach(b => {
-        b.classList.remove('text-blue-700', 'border-blue-700');
-        b.classList.add('text-slate-500', 'border-transparent');
-    });
+// Reset all tab buttons to inactive style
+document.querySelectorAll('#app-nav button').forEach(b => {
+    b.classList.remove('tab-btn-active');
+});
 
     // Activate the selected tab + show its content
-    if (tabName === 'dashboard') {
-        document.getElementById('dashboard-view').classList.remove('hidden');
-        const btn = document.getElementById('dashboard-tab');
-        btn.classList.add('text-blue-700', 'border-blue-700');
-        btn.classList.remove('border-transparent');
-        fetchJobStatusCounts();
-        fetchScheduleData();
-    } else if (tabName === 'checkin') {
-        document.getElementById('checkin-view').classList.remove('hidden');
-        const btn = document.getElementById('checkin-tab');
-        btn.classList.add('text-blue-700', 'border-blue-700');
-        btn.classList.remove('border-transparent');
-    } else if (tabName === 'forms') {
-        document.getElementById('forms-view').classList.remove('hidden');
-        const btn = document.getElementById('forms-tab');
-        btn.classList.add('text-blue-700', 'border-blue-700');
-        btn.classList.remove('border-transparent');
-        loadFormEntries();
-    } else if (tabName === 'joblog') {
-        document.getElementById('joblog-view').classList.remove('hidden');
-        const btn = document.getElementById('joblog-tab');
-        btn.classList.add('text-blue-700', 'border-blue-700');
-        btn.classList.remove('border-transparent');
-        fetchJobLog();
-    }
+if (tabName === 'dashboard') {
+    document.getElementById('dashboard-view').classList.remove('hidden');
+    const btn = document.getElementById('dashboard-tab');
+    btn.classList.add('tab-btn-active');
+    fetchJobStatusCounts();
+    fetchScheduleData();
+} else if (tabName === 'checkin') {
+    document.getElementById('checkin-view').classList.remove('hidden');
+    const btn = document.getElementById('checkin-tab');
+    btn.classList.add('tab-btn-active');
+} else if (tabName === 'forms') {
+    document.getElementById('forms-view').classList.remove('hidden');
+    const btn = document.getElementById('forms-tab');
+    btn.classList.add('tab-btn-active');
+    loadFormEntries();
+} else if (tabName === 'joblog') {
+    document.getElementById('joblog-view').classList.remove('hidden');
+    const btn = document.getElementById('joblog-tab');
+    btn.classList.add('tab-btn-active');
+    fetchJobLog();
 }
 
 // ============================================
