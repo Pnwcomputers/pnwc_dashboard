@@ -75,6 +75,12 @@
         position: relative;
         z-index: 2; /* ensures text sits above overlay */
     }
+        
+    .menu-btn {
+        @apply w-full text-left text-white font-semibold px-4 py-2 rounded-lg shadow 
+               bg-blue-700 hover:bg-blue-800 transition duration-150;
+    }
+        
 </style>
 </head>
 <body class="min-h-screen text-gray-900">
@@ -175,34 +181,49 @@
             class="app-content-hidden mb-6 border-b border-slate-200 flex justify-center"
         >
             <div class="flex space-x-1 sm:space-x-4">
-                <button
-                    id="dashboard-tab"
-                    onclick="showTab('dashboard')"
-                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-blue-700 text-blue-700"
-                >
-                    Dashboard
-                </button>
-                <button
-                    id="checkin-tab"
-                    onclick="showTab('checkin')"
-                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
-                >
-                    New Job Check-In
-                </button>
-                <button
-                    id="forms-tab"
-                    onclick="showTab('forms')"
-                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
-                >
-                    Form Entries
-                </button>
-                <button
-                    id="joblog-tab"
-                    onclick="showTab('joblog')"
-                    class="py-2.5 px-4 text-sm sm:text-base font-medium border-b-4 border-transparent text-slate-500 hover:text-blue-700"
-                >
-                    Job Log
-                </button>
+<button
+    id="dashboard-tab"
+    onclick="showTab('dashboard')"
+    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
+           bg-blue-700 text-white rounded-md shadow 
+           hover:bg-blue-800 transition 
+           border border-blue-700"
+>
+    Dashboard
+</button>
+
+<button
+    id="checkin-tab"
+    onclick="showTab('checkin')"
+    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
+           bg-white text-slate-700 rounded-md shadow 
+           hover:bg-slate-100 transition 
+           border border-slate-300"
+>
+    New Job Check-In
+</button>
+
+<button
+    id="forms-tab"
+    onclick="showTab('forms')"
+    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
+           bg-white text-slate-700 rounded-md shadow 
+           hover:bg-slate-100 transition 
+           border border-slate-300"
+>
+    Form Entries
+</button>
+
+<button
+    id="joblog-tab"
+    onclick="showTab('joblog')"
+    class="px-4 py-2.5 text-sm sm:text-base font-semibold 
+           bg-white text-slate-700 rounded-md shadow 
+           hover:bg-slate-100 transition 
+           border border-slate-300"
+>
+    Job Log
+</button>
             </div>
         </nav>
 
