@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PNW Computers Job Tracker</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.4/dist/tailwind.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
@@ -30,7 +30,7 @@
         <form id="login-form" class="space-y-6">
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
+                <input type="password" id="password" name="password" autocomplete="current-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-blue-500 focus:border-blue-500" placeholder="Enter password">
             </div>
             <p id="login-message" class="text-sm text-red-600 text-center hidden"></p>
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors">
@@ -490,11 +490,23 @@ async function fetchFormEntries(formType) {
     if (!response.ok) {
         throw new Error('Unable to reach server');
     }
+
     const result = await response.json();
-    if (result.result !== 'success') {
-        throw new Error(result.message || 'Unknown error fetching entries');
+
+    if (Array.isArray(result)) {
+        return result;
     }
-    return result.entries || [];
+
+    if (result && typeof result === 'object') {
+        if (result.result && result.result !== 'success') {
+            throw new Error(result.message || 'Unknown error fetching entries');
+        }
+        if (Array.isArray(result.entries)) {
+            return result.entries;
+        }
+    }
+
+    throw new Error('Unexpected response format from server');
 }
 
 function renderFormEntries(formType, entries) {
