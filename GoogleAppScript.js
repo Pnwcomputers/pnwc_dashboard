@@ -307,6 +307,11 @@ function doGet(e) {
   const status = e && e.parameter ? e.parameter.status : null;
   const sheetParam = e && e.parameter ? e.parameter.sheet : null;
   const rowIndex = e && e.parameter ? e.parameter.rowIndex : null;
+  
+  if (action === 'syncCalendar') {
+    syncOnsiteSchedule();
+    return createJsonResponse({ result: 'success', message: 'Calendar synced.' });
+  }
 
   // Job log data
   if (action === 'getAllJobs') {
