@@ -607,7 +607,8 @@ function createJobCard(job) {
         '2. Awaiting Customer Approval': 'border-orange-500 bg-orange-50',
         '3. Awaiting Parts (Vendor Side)': 'border-yellow-600 bg-yellow-50',
         '4. In Progress: Repair/Install': 'border-purple-600 bg-purple-50',
-        '5. Ready for Pickup/Delivery': 'border-green-600 bg-green-50'
+        '5. Ready for Pickup/Delivery': 'border-green-600 bg-green-50',
+        'Completed': 'border-gray-500 bg-gray-50'
     };
     
     const colorClass = statusColors[job.Status] || 'border-gray-400 bg-gray-50';
@@ -634,6 +635,12 @@ function createJobCard(job) {
                     </div>
                 </div>
             </div>
+            ${job.Date_Completed ? `
+                <div class="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+                    <p class="font-semibold mb-1">Completed:</p>
+                    <p>${formatDisplayDate(job.Date_Completed)}</p>
+                </div>
+            ` : ''}
             ${job.Initial_Request ? `
                 <div class="mt-3 pt-3 border-t border-gray-300">
                     <p class="font-semibold text-sm text-gray-700 mb-1">Initial Request:</p>
@@ -689,8 +696,65 @@ async function fetchJobLog() {
 
 function displayJobLogTable(jobs) {
     const container = document.getElementById('joblog-container');
-    
-    let html = `
+
+    const activeJobs = jobs.filter(job => !job.Date_Completed);
+    const completedJobs = jobs.filter(job => job.Date_Completed);
+
+    completedJobs.sort((a, b) => {
+        const dateA = parseDateString(a.Date_Completed);
+        const dateB = parseDateString(b.Date_Completed);
+        const timeA = dateA ? dateA.getTime() : 0;
+        const timeB = dateB ? dateB.getTime() : 0;
+        return timeB - timeA;
+    });
+
+    let html = '<div class="space-y-8">';
+
+    html += `
+        <section class="bg-white rounded-xl shadow-lg border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Active Jobs (${activeJobs.length})</h3>
+                <p class="text-sm text-gray-500">Jobs with no completion date</p>
+            </div>
+            <div class="p-6">
+                ${activeJobs.length ? createJobTable(activeJobs, { showMarkDone: true }) : '<p class="text-gray-500 text-sm">No active jobs at the moment.</p>'}
+            </div>
+        </section>
+    `;
+
+    const completedTable = completedJobs.length
+        ? createJobTable(completedJobs, { showCompletionDate: true })
+        : '<p class="text-gray-500 text-sm">No completed jobs recorded yet.</p>';
+
+    html += `
+        <section>
+            <details id="completed-jobs" class="group bg-white rounded-xl shadow-lg border border-gray-200" ${completedJobs.length ? '' : 'open'}>
+                <summary class="cursor-pointer px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">Completed Jobs (${completedJobs.length})</h3>
+                        <p class="text-sm text-gray-500">Jobs moved out of the active log</p>
+                    </div>
+                    <span class="text-sm text-blue-600 group-open:hidden">Show</span>
+                    <span class="text-sm text-blue-600 hidden group-open:block">Hide</span>
+                </summary>
+                <div class="p-6 pt-0">
+                    ${completedTable}
+                </div>
+            </details>
+        </section>
+    `;
+
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+function createJobTable(jobs, { showCompletionDate = false, showMarkDone = false } = {}) {
+    if (!jobs || jobs.length === 0) {
+        return '';
+    }
+
+    let table = `
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-100 border-b-2 border-gray-300">
@@ -699,41 +763,53 @@ function displayJobLogTable(jobs) {
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Client Name</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Service Type</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Due Date</th>
+                        ${showCompletionDate ? '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date Completed</th>' : ''}
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
     `;
-    
+
     jobs.forEach((job, index) => {
         const rowColor = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-        html += `
+        const actionButtons = [
+            `<button onclick="editJob(${job.rowIndex})" class="text-blue-600 hover:text-blue-800 font-semibold">Edit</button>`,
+            `<button onclick="viewJobDetails(${job.rowIndex})" class="text-green-600 hover:text-green-800 font-semibold">View</button>`
+        ];
+
+        if (showMarkDone) {
+            actionButtons.push(`<button onclick="markJobDone(${job.rowIndex}, this)" class="text-indigo-600 hover:text-indigo-800 font-semibold">Mark Done</button>`);
+        }
+
+        table += `
             <tr class="${rowColor} hover:bg-blue-50 transition-colors">
                 <td class="px-4 py-3 text-sm font-medium text-gray-900">${job.Job_ID || 'N/A'}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">${job.Client_Name || 'N/A'}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">${job.Service_Type || 'N/A'}</td>
                 <td class="px-4 py-3 text-sm text-gray-700">${job.Due_Date || 'N/A'}</td>
+                ${showCompletionDate ? `<td class="px-4 py-3 text-sm text-gray-700">${formatDisplayDate(job.Date_Completed) || 'N/A'}</td>` : ''}
                 <td class="px-4 py-3 text-sm">
                     <span class="px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(job.Status)}">
                         ${job.Status || 'N/A'}
                     </span>
                 </td>
                 <td class="px-4 py-3 text-sm">
-                    <button onclick="editJob(${job.rowIndex})" class="text-blue-600 hover:text-blue-800 font-semibold mr-3">Edit</button>
-                    <button onclick="viewJobDetails(${job.rowIndex})" class="text-green-600 hover:text-green-800 font-semibold">View</button>
+                    <div class="flex flex-wrap gap-3">
+                        ${actionButtons.join('')}
+                    </div>
                 </td>
             </tr>
         `;
     });
-    
-    html += `
+
+    table += `
                 </tbody>
             </table>
         </div>
     `;
-    
-    container.innerHTML = html;
+
+    return table;
 }
 
 function getStatusBadgeColor(status) {
@@ -742,9 +818,72 @@ function getStatusBadgeColor(status) {
         '2. Awaiting Customer Approval': 'bg-orange-100 text-orange-800',
         '3. Awaiting Parts (Vendor Side)': 'bg-yellow-100 text-yellow-800',
         '4. In Progress: Repair/Install': 'bg-purple-100 text-purple-800',
-        '5. Ready for Pickup/Delivery': 'bg-green-100 text-green-800'
+        '5. Ready for Pickup/Delivery': 'bg-green-100 text-green-800',
+        'Completed': 'bg-gray-200 text-gray-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
+}
+
+function parseDateString(dateString) {
+    if (!dateString) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return new Date(dateString);
+    }
+
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return null;
+    const [month, day, year] = parts;
+    return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+}
+
+function formatDisplayDate(dateString) {
+    const date = parseDateString(dateString);
+    if (!date) return dateString || '';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function markJobDone(rowIndex, button) {
+    const confirmComplete = confirm('Mark this job as completed and move it to the completed log?');
+    if (!confirmComplete) {
+        return;
+    }
+
+    let originalText = '';
+    if (button) {
+        originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Marking...';
+    }
+
+    try {
+        const params = new URLSearchParams();
+        params.append('action', 'markJobCompleted');
+        params.append('rowIndex', rowIndex);
+
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: params
+        });
+
+        const result = await response.json();
+
+        if (result.result === 'success') {
+            alert('Job marked as completed.');
+            fetchJobLog();
+            fetchJobStatusCounts();
+        } else {
+            throw new Error(result.message || 'Unable to mark job complete.');
+        }
+    } catch (error) {
+        console.error('Error marking job complete:', error);
+        alert('Error marking job complete: ' + error.message);
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText || 'Mark Done';
+        }
+    }
 }
 
 async function editJob(rowIndex) {
@@ -808,6 +947,7 @@ function showEditModal(job, rowIndex) {
                         <option value="3. Awaiting Parts (Vendor Side)" ${job.Status === '3. Awaiting Parts (Vendor Side)' ? 'selected' : ''}>3. Awaiting Parts (Vendor Side)</option>
                         <option value="4. In Progress: Repair/Install" ${job.Status === '4. In Progress: Repair/Install' ? 'selected' : ''}>4. In Progress: Repair/Install</option>
                         <option value="5. Ready for Pickup/Delivery" ${job.Status === '5. Ready for Pickup/Delivery' ? 'selected' : ''}>5. Ready for Pickup/Delivery</option>
+                        <option value="Completed" ${job.Status === 'Completed' ? 'selected' : ''}>Completed</option>
                     </select>
                 </div>
                 <div>
