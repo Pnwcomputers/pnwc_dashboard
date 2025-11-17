@@ -40,7 +40,6 @@
             display: none;
         }
 
-        /* One-off rotation for refresh icons */
         .rotate-icon {
             animation: spin 0.5s linear;
         }
@@ -536,6 +535,7 @@
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyfKLY8bTrUrwPxCDyr30BgIkPrSjz14ySOulWejU6kwxzfjNl0pegaSI_eNapi6dQh9g/exec';
 const MASTER_PASSWORD = 'Numbers11!';
 const SESSION_KEY = 'pnw_computers_logged_in';
+
 const FORM_SECTIONS = {
     checkin: {
         containerId: 'checkin-form-entries',
@@ -548,6 +548,7 @@ const FORM_SECTIONS = {
         label: 'Intake Questions Form (Responses)'
     }
 };
+
 const formEntriesCache = {
     checkin: null,
     intake: null
@@ -613,7 +614,6 @@ async function refreshDashboard(syncCalendar = false) {
         try {
             const syncResponse = await fetch(`${WEB_APP_URL}?action=syncCalendar`);
             const syncResult = await syncResponse.json();
-
             if (syncResult.result !== 'success') {
                 console.error('Calendar sync error:', syncResult.message);
             }
@@ -638,7 +638,7 @@ async function refreshDashboard(syncCalendar = false) {
 }
 
 // ============================================
-// AUTO-GENERATE JOB ID PREVIEW
+// JOB ID HELPERS
 // ============================================
 
 function generateInitials(name) {
@@ -672,16 +672,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-generate Job ID preview
     document.getElementById('clientName').addEventListener('input', function(e) {
         const name = e.target.value.trim();
+        const jobIdInput = document.getElementById('jobId');
         if (name) {
             const initials = generateInitials(name);
             const dateStr = generateDateString();
             const preview = `${initials}-${dateStr}-##`;
-            const jobIdInput = document.getElementById('jobId');
             jobIdInput.value = preview;
             jobIdInput.classList.remove('text-slate-600');
             jobIdInput.classList.add('text-blue-600', 'font-semibold');
         } else {
-            const jobIdInput = document.getElementById('jobId');
             jobIdInput.value = '';
             jobIdInput.classList.remove('text-blue-600', 'font-semibold');
             jobIdInput.classList.add('text-slate-600');
@@ -692,7 +691,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('job-checkin-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const jobIdInput = document.getElementById('jobId');
+        let jobId = jobIdInput.value.trim();
+
+        // Fallback: if for some reason it's blank, generate something simple
+        if (!jobId) {
+            const clientNameVal = document.getElementById('clientName').value.trim();
+            const initials = clientNameVal ? generateInitials(clientNameVal) : 'XX';
+            jobId = `${initials}-${generateDateString()}-##`;
+        }
+
         const jobData = {
+            jobId: jobId,
             clientName: document.getElementById('clientName').value,
             clientEmail: document.getElementById('clientEmail').value,
             clientPhone: document.getElementById('clientPhone').value,
