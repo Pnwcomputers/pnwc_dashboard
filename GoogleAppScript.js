@@ -232,6 +232,58 @@ This is an automated notification email.
   }
 }
 
+function getNextJobId() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(MASTER_LOG_SHEET_NAME);
+  if (!sheet) {
+    throw new Error('Master Job Log sheet not found');
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const jobIdColIndex = headers.indexOf('Job ID');
+
+  if (jobIdColIndex === -1) {
+    throw new Error('Job ID column not found in Master Job Log');
+  }
+
+  const tz = Session.getScriptTimeZone() || 'America/Los_Angeles';
+  const today = new Date();
+  const datePart = Utilities.formatDate(today, tz, 'MMddyy'); // e.g. 111725
+  const prefix = `JW-${datePart}-`;
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    // No jobs yet
+    return `${prefix}01`;
+  }
+
+  // Get all Job IDs in that column (rows 2..lastRow)
+  const values = sheet.getRange(2, jobIdColIndex + 1, lastRow - 1, 1).getValues();
+
+  let maxSeq = 0;
+  const regex = new RegExp(`^JW-${datePart}-(\\d{2})$`);
+
+  for (let i = 0; i < values.length; i++) {
+    const id = values[i][0];
+    if (!id || typeof id !== 'string') continue;
+
+    const m = id.match(regex);
+    if (m) {
+      const num = parseInt(m[1], 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  }
+
+  const nextSeq = maxSeq + 1;
+  const nextSeqStr = String(nextSeq).padStart(2, '0'); // 01, 02, 03...
+  const newId = `${prefix}${nextSeqStr}`;
+
+  Logger.log('Generated new Job ID: ' + newId);
+  return newId;
+}
+
 // ============================================
 // ORIGINAL FUNCTIONS (MODIFIED)
 // ============================================
@@ -254,7 +306,7 @@ function doPost(e) {
     return createJsonResponse({ result: 'error', message: 'Sheet not found' });
   }
   
-  // Handle form data sent via URLSearchParams
+  // ✅ KEEP THIS: Handle form data sent via URLSearchParams
   let data;
   try {
     if (e.parameter && e.parameter.data) {
@@ -270,8 +322,13 @@ function doPost(e) {
     return createJsonResponse({ result: 'error', message: 'Invalid data format: ' + error.message });
   }
 
+  // 🔹 NEW: Ensure we always have a valid Job ID
+  if (!data.jobId || data.jobId === '') {
+    data.jobId = getNextJobId();  // <- uses the helper function
+  }
+
   const rowData = [
-    data.jobId || '',
+    data.jobId,
     new Date(),
     data.serviceType || '',
     data.clientName || '',
@@ -295,7 +352,11 @@ function doPost(e) {
       sendConfirmationEmail(data);
     }
     
-    return createJsonResponse({ result: 'success', message: `Job ${data.jobId} logged successfully! Confirmation email sent.` });
+    return createJsonResponse({
+  result: 'success',
+  message: `Job ${data.jobId} logged successfully! Confirmation email sent.`,
+  jobId: data.jobId
+});
   } catch (error) {
     Logger.log('Sheet append error: ' + error.message);
     return createJsonResponse({ result: 'error', message: error.message });
