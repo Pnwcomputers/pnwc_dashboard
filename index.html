@@ -1395,6 +1395,16 @@ function createJobCard(job) {
             `
                     : ''
             }
+            ${
+                job.Job_Notes
+                    ? `
+                <div class="mt-3 pt-2 border-t border-slate-200">
+                    <p class="font-semibold text-[13px] text-slate-800 mb-1">Job Notes:</p>
+                    <p class="text-[13px] text-slate-600 whitespace-pre-wrap">${job.Job_Notes}</p>
+                </div>
+            `
+                    : ''
+            }
         </div>
     `;
 }
